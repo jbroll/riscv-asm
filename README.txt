@@ -14,6 +14,10 @@ Fundamantal concepts to illustrate:
  * Addressing modes
  * Stack Memory
  * Heap Memory
+ * Flags
+ * Controll FLow
+   * Jump 
+   * Call/Return 
 
 ## Registers:
  
