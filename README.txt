@@ -19,6 +19,9 @@ Fundamantal concepts to illustrate:
    * Jump 
    * Call/Return 
 
+## Limitations
+   * Memory is an array of 'words' (32 bit?) which can contain either a number or an instruction.
+
 ## Registers:
  
    ip	- instruction pointer
