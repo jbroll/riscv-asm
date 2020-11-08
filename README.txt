@@ -20,7 +20,7 @@ Fundamantal concepts to illustrate:
    * Call/Return 
 
 ## Limitations
-   * Memory is an array of 'words' (32 bit?) which can contain either a number or an instruction.
+   * Memory is an array of 'words' (32 bit?) which can contain either a integer or an instruction.
 
 ## Registers:
  
