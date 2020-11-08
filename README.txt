@@ -1,9 +1,19 @@
 
 A simple assembly language simulator
 
-I wanted teach assembly language to intro CS students without worrying about
-the details of real a CPU or dealing with long explainations of historical
-baggage that plagues popular hardware.
+I wanted an assembly language for a CPU that would show the concepts of
+hardware to intro CS students without worrying about the details of real a CPU
+or dealing with long explainations of historical baggage that plagues popular
+hardware.
+
+Knuth's MIX and MMIX suffer the same issues as 'real' assembly languages for the
+same reasons.  They are just too complicated.
+
+Fundamantal concepts to illustrate:
+ * CPU
+ * Addressing modes
+ * Stack Memory
+ * Heap Memory
 
 ## Registers:
  
