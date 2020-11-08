@@ -1,0 +1,32 @@
+
+# C Code
+#
+# main(int argc, int argv[]) {
+#   int sum = 0;
+#
+#   for ( int i = 0; i < argc; i++ ) {
+#       sum += argv[i];
+#   }
+#
+#   printf("%d\n", sum);
+#
+#   return 0;
+# }
+#
+main:
+    mov a, 0
+    mov b, [sp+2]
+    mov c, [sp+1]
+
+  _loop:
+    mov d, [b]
+    add a, d
+    inc b
+
+    dec c
+    cmp c 0
+    jne _loop
+
+    print a
+
+    ret

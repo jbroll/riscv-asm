@@ -1,0 +1,175 @@
+
+double:
+  push b
+
+  mov a, [sp+2]
+  mov b, 2
+  mul a, b
+
+  pop b
+  ret
+
+testCall:
+    push 4
+    call double
+    pop
+    assert a 8
+    ret
+
+x: .mem 4321
+y: .mem 1234
+
+testAddrReg:
+    mov a, 5
+    mov b, a
+
+    assert a 5
+    assert b 5
+
+    ret
+testAddrMem:
+    mov a, x
+    mov a, [a]
+    assert a 4321
+    mov a [x]
+    assert a 4321
+
+    mov a, 5
+    mov c, sp
+    add c, 10
+    mov [c], a
+    assert [c] 5
+
+    ret
+
+testStackOp:
+    push 5
+    push 6
+    push 7
+    assert [sp] 7
+    assert [sp+1] 6
+    assert [sp+2] 5
+
+    pop a
+    assert   a  7
+    assert [sp] 6
+
+    pop 1
+    assert   a  7
+    assert [sp] 5
+
+    pop
+    assert   a  7
+
+    ret
+
+testAdd:
+    mov a 3
+    mov b 5
+
+    add a b
+    assert a 8
+
+    inc a
+    assert a 9
+    dec b
+    assert b 4
+    ret
+
+testSub:
+    mov a 3
+    mov b 5
+
+    sub a b
+    assert a -2
+    ret
+
+testMul:
+    mov a 3
+    mov b 5
+
+    mul a b
+    assert a 15
+    ret
+
+testDiv:
+    mov a 15
+    mov b  3
+
+    div a b
+    assert a 5
+
+    mov a 4
+    mov b 5
+    div a b
+    assert a 0
+
+    mov a 40
+    mov b 9
+    div a b
+    assert a 4
+
+    ret
+
+testJump:
+    jmp _top
+.mem 1 2 3 4 5
+
+_top:
+  mov a, 5		# Test loop with cmp, jne
+  mov b, 0
+ _loopNE:
+  sub a 1
+  add b 1
+  cmp a 0
+  jne _loopNE
+
+  assert a 0
+  assert b 5
+
+  mov c, 0		# Test loop with cmp, je
+  mov b, 0
+
+ _loopEq:
+  inc c
+  mov a c
+  div a 5
+  add b 1
+  cmp a 0
+  je _loopEq
+
+  assert a 1
+  assert b 5
+  ret
+
+main:
+  call testCall
+  call testAddrReg
+  call testAddrMem
+  call testStackOp
+  call testJump
+  call testAdd
+  call testSub
+  call testMul
+  call testDiv
+
+  # Check ARGC, ARGV
+  assert [sp+1], 3
+  assert [sp+2], 1001
+
+  mov a, [sp+2]
+  mov b, [a]
+  assert b, 90
+
+  inc a
+  mov b, [a]
+  assert b, 91
+
+  inc a
+  mov b, [a]
+  assert b, 92
+
+
+  mov a, 0
+  ret
+

@@ -1,0 +1,51 @@
+
+# C Code
+#
+# main(int argc, int argv[]) {
+#   int sum = 0;
+#
+#   for ( int i = 0; i < argc; i++ ) {
+#       sum += argv[i];
+#   }
+#
+#   printf("%d\n", sum);
+#
+#   return 0;
+# }
+#
+main:
+    mov fp, sp
+    sub sp, 2       # Space for 2 local variables
+                    # [fp-1] is sum
+                    # [fp-2] is i
+
+    mov a 0
+    mov [fp-1], a   # Initialize locals
+    mov [fp-2], a
+
+  _loop:
+    mov a, [fp-1]   # sum in register
+    mov b, [fp+2]   # argv
+    mov c, [fp-2]   # i in register
+
+    add b, c        # index argv by i
+
+    mov b, [b]      # load argv[i] into b register
+
+    add a, b        # add up and save sum
+    mov [fp-1], a
+    
+    mov c, [fp-2]   # i in register
+    inc c
+    mov [fp-2], c
+
+    mov c, [fp-2]   # i in register
+    mov d, [fp+1]   # argc in register
+    cmp c, d 
+    jne _loop
+
+    mov a, [fp-1]   # sum in register for printing
+    print a
+
+    mov sp, fp
+    ret
