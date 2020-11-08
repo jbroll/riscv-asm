@@ -35,11 +35,11 @@ main:
     add a, b        # add up and save sum
     mov [fp-1], a
     
-    mov c, [fp-2]   # i in register
+    mov c, [fp-2]   # increment i
     inc c
     mov [fp-2], c
 
-    mov c, [fp-2]   # i in register
+    mov c, [fp-2]   # Check i == argc
     mov d, [fp+1]   # argc in register
     cmp c, d 
     jne _loop

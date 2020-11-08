@@ -1,12 +1,9 @@
 
 double:
-  push b
-
-  mov a, [sp+2]
+  mov a, [sp+1]
   mov b, 2
   mul a, b
 
-  pop b
   ret
 
 testCall:
