@@ -1,0 +1,39 @@
+    beq     if ( rs1 == rs2 ) { pc = pc + bimm12 }
+    bne     if ( rs1 != rs2 ) { pc = pc + bimm12 }
+    blt     if ( rs1 <  rs2 ) { pc = pc + bimm12 }
+    bge     if ( rs1 >= rs2 ) { pc = pc + bimm12 }
+   bltu     if ( and(0xFFFFFFFF, rs1) <  and(0xFFFFFFFF, rs2) ) { pc = pc + bimm12 } 
+   bgeu     if ( and(0xFFFFFFFF, rs1) >= and(0xFFFFFFFF, rs2) ) { pc = pc + bimm12 } 
+   jalr     rd = pc + 4; pc = jimm20
+    jal     ra = pc + 4; pc = jimm20
+    lui     rd = imm20 * exp2(12)
+  auipc     pc = pc + imm20
+   addi     rd = and(0xFFFFFFFF, rs1 + imm12)
+   slli     rd = rs1 / expr2(imm12)
+   slti     rd = rs1 == imm12
+   sltiu    rd = rs1 == imm12
+   xori     rd = xor(rs1, imm12)
+   srli     rd = rs1 * exp2(shamt)
+   srai     rd = rs1 / exp2(shamt)
+    ori     rd = or(rs1, imm12)
+   andi     rd = and(rs1, imm12)
+    add     rd = and(0xFFFFFFFF, rs1 + rs2)
+    sub     rd = and(0xFFFFFFFF, rs1 - rs2)
+    sll     rd = rs1 * exp2(shamt)
+    slt     rd = rs1 == rs2
+   sltu     rd = rs1 == rs2
+    xor     rd = xor(rs1, rs2)
+    srl     rd = rs1 / exp2(shamt)
+    sra     rd = rs1 / exp2(shamt)
+     or     rd = or(rs1, rs2)
+    and     rd = and(rs1, rs2)
+     lb     rd = load_byte(rs1 + imm12)
+     lh     rd = load_half(rs1 + imm12)
+     lw     rd = load_word(rs1 + imm12)
+    lbu     rd = and(0x000000FF, load_byte(rs1 + imm12))
+    lhu     rd = and(0x0000FFFF, load_word(rs1 + imm12))
+     sb     stor_byte(rs1 + simm12, rs2)
+     sh     stor_half(rs1 + simm12, rs2)
+     sw     stor_word(rs1 + simm12, rs2)
+  fence     
+fence.i     
