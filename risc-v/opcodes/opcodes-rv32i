@@ -1,57 +1,73 @@
-# format of a line in this file:
-# <instruction name> <args> <opcode>
-#
-# <opcode> is given by specifying one or more range/value pairs:
-# hi..lo=value or bit=value or arg=value (e.g. 6..2=0x45 10=1 rd=0)
-#
-# <args> is one of rd, rs1, rs2, rs3, imm20, imm12, imm12lo, imm12hi,
-# shamtw, shamt, rm
 
-beq     bimm12hi rs1 rs2 bimm12lo 14..12=0 6..2=0x18 1..0=3
-bne     bimm12hi rs1 rs2 bimm12lo 14..12=1 6..2=0x18 1..0=3
-blt     bimm12hi rs1 rs2 bimm12lo 14..12=4 6..2=0x18 1..0=3
-bge     bimm12hi rs1 rs2 bimm12lo 14..12=5 6..2=0x18 1..0=3
-bltu    bimm12hi rs1 rs2 bimm12lo 14..12=6 6..2=0x18 1..0=3
-bgeu    bimm12hi rs1 rs2 bimm12lo 14..12=7 6..2=0x18 1..0=3
+immediate jimm20    31|19..12|20|30..21|x
+immediate bimm12    31|7|30..25|11..8|x
+immediate jimm12    31..20
+immediate limm12    31..20
+immediate simm12    31..25|11..7
+immediate aimm12    31..20
+immediate  imm20    31..12
+immediate shamt6    25..20
+immediate  uimm5    19..15
 
-jalr    rd rs1 imm12              14..12=0 6..2=0x19 1..0=3
+opcode beq     rs1 rs2 bimm12                       14..12=0 6..2=0x18 1..0=3
+opcode bne     rs1 rs2 bimm12                       14..12=1 6..2=0x18 1..0=3
+opcode blt     rs1 rs2 bimm12                       14..12=4 6..2=0x18 1..0=3
+opcode bge     rs1 rs2 bimm12                       14..12=5 6..2=0x18 1..0=3
+opcode bltu    rs1 rs2 bimm12                       14..12=6 6..2=0x18 1..0=3
+opcode bgeu    rs1 rs2 bimm12                       14..12=7 6..2=0x18 1..0=3
 
-jal     rd jimm20                          6..2=0x1b 1..0=3
+opcode jalr     rd rs1 jimm12                         14..12=0 6..2=0x19 1..0=3
+alias  jalr        rs1 jimm12   -> jalr ra rs1 jimm12
 
-lui     rd imm20 6..2=0x0D 1..0=3
-auipc   rd imm20 6..2=0x05 1..0=3
+opcode jal      rd jimm20                                     6..2=0x1b 1..0=3
+alias  jal         jimm20       -> jal  ra jimm20
 
-addi    rd rs1 imm12           14..12=0 6..2=0x04 1..0=3
-slli    rd rs1 31..26=0  shamt 14..12=1 6..2=0x04 1..0=3
-slti    rd rs1 imm12           14..12=2 6..2=0x04 1..0=3
-sltiu   rd rs1 imm12           14..12=3 6..2=0x04 1..0=3
-xori    rd rs1 imm12           14..12=4 6..2=0x04 1..0=3
-srli    rd rs1 31..26=0  shamt 14..12=5 6..2=0x04 1..0=3
-srai    rd rs1 31..26=16 shamt 14..12=5 6..2=0x04 1..0=3
-ori     rd rs1 imm12           14..12=6 6..2=0x04 1..0=3
-andi    rd rs1 imm12           14..12=7 6..2=0x04 1..0=3
+opcode lui     rd imm20                                      6..2=0x0D 1..0=3
+opcode auipc   rd imm20                                      6..2=0x05 1..0=3
 
-add     rd rs1 rs2 31..25=0  14..12=0 6..2=0x0C 1..0=3
-sub     rd rs1 rs2 31..25=32 14..12=0 6..2=0x0C 1..0=3
-sll     rd rs1 rs2 31..25=0  14..12=1 6..2=0x0C 1..0=3
-slt     rd rs1 rs2 31..25=0  14..12=2 6..2=0x0C 1..0=3
-sltu    rd rs1 rs2 31..25=0  14..12=3 6..2=0x0C 1..0=3
-xor     rd rs1 rs2 31..25=0  14..12=4 6..2=0x0C 1..0=3
-srl     rd rs1 rs2 31..25=0  14..12=5 6..2=0x0C 1..0=3
-sra     rd rs1 rs2 31..25=32 14..12=5 6..2=0x0C 1..0=3
-or      rd rs1 rs2 31..25=0  14..12=6 6..2=0x0C 1..0=3
-and     rd rs1 rs2 31..25=0  14..12=7 6..2=0x0C 1..0=3
+opcode nop     11..7=0 19..15=0 31..20=0            14..12=0 6..2=0x04 1..0=3
+opcode addi    rd rs1 aimm12                        14..12=0 6..2=0x04 1..0=3
+opcode slli    rd rs1 shamt6              31..26=0  14..12=1 6..2=0x04 1..0=3
+opcode slti    rd rs1 aimm12                        14..12=2 6..2=0x04 1..0=3
+opcode sltiu   rd rs1 aimm12                        14..12=3 6..2=0x04 1..0=3
+opcode xori    rd rs1 aimm12                        14..12=4 6..2=0x04 1..0=3
+opcode ori     rd rs1 aimm12                        14..12=6 6..2=0x04 1..0=3
+opcode andi    rd rs1 aimm12                        14..12=7 6..2=0x04 1..0=3
 
-lb      rd rs1       imm12 14..12=0 6..2=0x00 1..0=3
-lh      rd rs1       imm12 14..12=1 6..2=0x00 1..0=3
-lw      rd rs1       imm12 14..12=2 6..2=0x00 1..0=3
-lbu     rd rs1       imm12 14..12=4 6..2=0x00 1..0=3
-lhu     rd rs1       imm12 14..12=5 6..2=0x00 1..0=3
+opcode srli    rd rs1 shamt6              31..26=0  14..12=5 6..2=0x04 1..0=3
+opcode srai    rd rs1 shamt6              31..26=16 14..12=5 6..2=0x04 1..0=3
 
-sb     imm12hi rs1 rs2 imm12lo 14..12=0 6..2=0x08 1..0=3
-sh     imm12hi rs1 rs2 imm12lo 14..12=1 6..2=0x08 1..0=3
-sw     imm12hi rs1 rs2 imm12lo 14..12=2 6..2=0x08 1..0=3
+opcode add     rd rs1 rs2                 31..25=0  14..12=0 6..2=0x0C 1..0=3
+opcode sub     rd rs1 rs2                 31..25=32 14..12=0 6..2=0x0C 1..0=3
+opcode sll     rd rs1 rs2                 31..25=0  14..12=1 6..2=0x0C 1..0=3
+opcode slt     rd rs1 rs2                 31..25=0  14..12=2 6..2=0x0C 1..0=3
+opcode sltu    rd rs1 rs2                 31..25=0  14..12=3 6..2=0x0C 1..0=3
+opcode xor     rd rs1 rs2                 31..25=0  14..12=4 6..2=0x0C 1..0=3
+opcode srl     rd rs1 rs2                 31..25=0  14..12=5 6..2=0x0C 1..0=3
+opcode sra     rd rs1 rs2                 31..25=32 14..12=5 6..2=0x0C 1..0=3
+opcode or      rd rs1 rs2                 31..25=0  14..12=6 6..2=0x0C 1..0=3
+opcode and     rd rs1 rs2                 31..25=0  14..12=7 6..2=0x0C 1..0=3
 
-fence       fm            pred succ     rs1 14..12=0 rd 6..2=0x03 1..0=3
-fence.i     imm12                       rs1 14..12=1 rd 6..2=0x03 1..0=3
+opcode lb      rd rs1  limm12                       14..12=0 6..2=0x00 1..0=3
+opcode lh      rd rs1  limm12                       14..12=1 6..2=0x00 1..0=3
+opcode lw      rd rs1  limm12                       14..12=2 6..2=0x00 1..0=3
+opcode lbu     rd rs1  limm12                       14..12=4 6..2=0x00 1..0=3
+opcode lhu     rd rs1  limm12                       14..12=5 6..2=0x00 1..0=3
 
+opcode sb      rs2 rs1 simm12                       14..12=0 6..2=0x08 1..0=3
+opcode sh      rs2 rs1 simm12                       14..12=1 6..2=0x08 1..0=3
+opcode sw      rs2 rs1 simm12                       14..12=2 6..2=0x08 1..0=3
+
+opcode fence   pred succ                  31..28=0  19..15=0 14..12=0 11..7=0 6..2=0x03 1..0=3
+alias fence -> fence iorw iorw
+opcode fence.tso                          31..28=8  27..24=3 23..20=3 19..15=0 14..12=0 11..7=0 6..2=0x03 1..0=3
+
+opcode ecall     11..7=0 19..15=0 31..20=0x000 14..12=0 6..2=0x1C 1..0=3
+opcode ebreak    11..7=0 19..15=0 31..20=0x001 14..12=0 6..2=0x1C 1..0=3
+
+opcode uret      11..7=0 19..15=0 31..20=0x002 14..12=0 6..2=0x1C 1..0=3
+opcode sret      11..7=0 19..15=0 31..20=0x102 14..12=0 6..2=0x1C 1..0=3
+opcode mret      11..7=0 19..15=0 31..20=0x302 14..12=0 6..2=0x1C 1..0=3
+opcode dret      11..7=0 19..15=0 31..20=0x7b2 14..12=0 6..2=0x1C 1..0=3
+opcode sfence.vma 11..7=0 rs1 rs2 31..25=0x09  14..12=0 6..2=0x1C 1..0=3
+opcode wfi       11..7=0 19..15=0 31..20=0x105 14..12=0 6..2=0x1C 1..0=3

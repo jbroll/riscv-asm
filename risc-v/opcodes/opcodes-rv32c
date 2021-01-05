@@ -1,0 +1,8 @@
+# RV32C additions to RVC
+
+opcode c.jal           cjimm11      1..0=1 15..13=1                        ->  jal    x1       cjimm11
+
+opcode c.slli   crdnz cbshamt5     1..0=2 15..13=0                        ->  slli crdnz crdnz cbshamt5
+opcode c.srli   crdhc cbshamt5     1..0=1 15..13=4 11..10=0               ->  srli crdhc crdhc cbshamt5
+opcode c.srai   crdhc cbshamt5     1..0=1 15..13=4 11..10=1               ->  srai crdhc crdhc cbshamt5
+

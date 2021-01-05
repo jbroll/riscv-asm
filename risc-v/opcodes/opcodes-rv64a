@@ -1,0 +1,25 @@
+# RV64A additions to RV32A
+
+opcode amoadd.d    rd rs2 rs1      aqrl 31..29=0 28..27=0 14..12=3 6..2=0x0B 1..0=3
+alias amoadd.d     rd rs2 rs1 -> amoadd.d    rd rs2 rs1 x
+opcode amoxor.d    rd rs2 rs1      aqrl 31..29=1 28..27=0 14..12=3 6..2=0x0B 1..0=3
+alias amoxor.d     rd rs2 rs1 -> amoxor.d    rd rs2 rs1 x
+opcode amoor.d     rd rs2 rs1      aqrl 31..29=2 28..27=0 14..12=3 6..2=0x0B 1..0=3
+alias amoor.d      rd rs2 rs1 -> amoor.d    rd rs2 rs1 x
+opcode amoand.d    rd rs2 rs1      aqrl 31..29=3 28..27=0 14..12=3 6..2=0x0B 1..0=3
+alias amoand.d     rd rs2 rs1 -> amoand.d    rd rs2 rs1 x
+opcode amomin.d    rd rs2 rs1      aqrl 31..29=4 28..27=0 14..12=3 6..2=0x0B 1..0=3
+alias amomin.d     rd rs2 rs1 -> amomin.d    rd rs2 rs1 x
+opcode amomax.d    rd rs2 rs1      aqrl 31..29=5 28..27=0 14..12=3 6..2=0x0B 1..0=3
+alias amomax.d     rd rs2 rs1 -> amomax.d    rd rs2 rs1 x
+opcode amominu.d   rd rs2 rs1      aqrl 31..29=6 28..27=0 14..12=3 6..2=0x0B 1..0=3
+alias amominu.d    rd rs2 rs1 -> amominu.d    rd rs2 rs1 x
+opcode amomaxu.d   rd rs2 rs1      aqrl 31..29=7 28..27=0 14..12=3 6..2=0x0B 1..0=3
+alias amomaxu.d    rd rs2 rs1 -> amomaxu.d    rd rs2 rs1 x
+opcode amoswap.d   rd rs2 rs1      aqrl 31..29=0 28..27=1 14..12=3 6..2=0x0B 1..0=3
+alias amoswap.d    rd rs2 rs1 -> amoswap.d    rd rs2 rs1 x
+
+opcode lr.d        rd rs1 24..20=0 aqrl 31..29=0 28..27=2 14..12=3 6..2=0x0B 1..0=3
+alias lr.d rd rs1 -> lr.d rd rs1 x
+opcode sc.d        rd rs2 rs1      aqrl 31..29=0 28..27=3 14..12=3 6..2=0x0B 1..0=3
+alias sc.d rd rs2 rs1 -> sc.d rd rs2 rs1 x
