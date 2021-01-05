@@ -1,0 +1,7 @@
+# RV64Q additions to RV32Q
+
+opcode fcvt.l.q  rd fs1 rm  24..20=2 31..27=0x18          26..25=3 6..2=0x14 1..0=3
+opcode fcvt.lu.q rd fs1 rm  24..20=3 31..27=0x18          26..25=3 6..2=0x14 1..0=3
+
+opcode fcvt.q.l  fd rs1 rm  24..20=2 31..27=0x1A          26..25=3 6..2=0x14 1..0=3
+opcode fcvt.q.lu fd rs1 rm  24..20=3 31..27=0x1A          26..25=3 6..2=0x14 1..0=3

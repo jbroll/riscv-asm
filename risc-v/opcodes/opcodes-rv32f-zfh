@@ -1,0 +1,36 @@
+opcode fadd.h    fd fs1 fs2      31..27=0x00 rm       26..25=2 6..2=0x14 1..0=3
+opcode fsub.h    fd fs1 fs2      31..27=0x01 rm       26..25=2 6..2=0x14 1..0=3
+opcode fmul.h    fd fs1 fs2      31..27=0x02 rm       26..25=2 6..2=0x14 1..0=3
+opcode fdiv.h    fd fs1 fs2      31..27=0x03 rm       26..25=2 6..2=0x14 1..0=3
+opcode fsgnj.h   fd fs1 fs2      31..27=0x04 14..12=0 26..25=2 6..2=0x14 1..0=3
+opcode fsgnjn.h  fd fs1 fs2      31..27=0x04 14..12=1 26..25=2 6..2=0x14 1..0=3
+opcode fsgnjx.h  fd fs1 fs2      31..27=0x04 14..12=2 26..25=2 6..2=0x14 1..0=3
+opcode fmin.h    fd fs1 fs2      31..27=0x05 14..12=0 26..25=2 6..2=0x14 1..0=3
+opcode fmax.h    fd fs1 fs2      31..27=0x05 14..12=1 26..25=2 6..2=0x14 1..0=3
+opcode fcvt.h.s  fd fs1 24..20=0 31..27=0x08 rm       26..25=2 6..2=0x14 1..0=3
+opcode fcvt.s.h  fd fs1 24..20=2 31..27=0x08 rm       26..25=0 6..2=0x14 1..0=3
+opcode fsqrt.h   fd fs1 24..20=0 31..27=0x0B rm       26..25=2 6..2=0x14 1..0=3
+
+opcode fle.h     fd fs1 fs2      31..27=0x14 14..12=0 26..25=2 6..2=0x14 1..0=3
+opcode flt.h     fd fs1 fs2      31..27=0x14 14..12=1 26..25=2 6..2=0x14 1..0=3
+opcode feq.h     fd fs1 fs2      31..27=0x14 14..12=2 26..25=2 6..2=0x14 1..0=3
+
+opcode fcvt.w.h  fd fs1 24..20=0 31..27=0x18 rm       26..25=2 6..2=0x14 1..0=3
+opcode fcvt.wu.h fd fs1 24..20=1 31..27=0x18 rm       26..25=2 6..2=0x14 1..0=3
+opcode fclass.h  fd fs1 24..20=0 31..27=0x1C 14..12=1 26..25=2 6..2=0x14 1..0=3
+
+opcode fcvt.h.w  fd fs1 24..20=0 31..27=0x1A rm       26..25=2 6..2=0x14 1..0=3
+opcode fcvt.h.wu fd fs1 24..20=1 31..27=0x1A rm       26..25=2 6..2=0x14 1..0=3
+
+if { ![iset finx] } {
+    opcode fmv.x.h   fd fs1 24..20=0 31..27=0x1C 14..12=0 26..25=2 6..2=0x14 1..0=3
+    opcode fmv.h.x   fd fs1 24..20=0 31..27=0x1E 14..12=0 26..25=2 6..2=0x14 1..0=3
+}
+
+opcode flh       fd  fs1 limm12 14..12=1 6..2=0x01 1..0=3
+opcode fsh       fs1 fs2 simm12 14..12=1 6..2=0x09 1..0=3
+
+opcode fmadd.h   fd fs1 fs2 fs3 rm 26..25=2 6..2=0x10 1..0=3
+opcode fmsub.h   fd fs1 fs2 fs3 rm 26..25=2 6..2=0x11 1..0=3
+opcode fnmsub.h  fd fs1 fs2 fs3 rm 26..25=2 6..2=0x12 1..0=3
+opcode fnmadd.h  fd fs1 fs2 fs3 rm 26..25=2 6..2=0x13 1..0=3

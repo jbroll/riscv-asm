@@ -1,0 +1,6 @@
+
+opcode c.fld cfdlc crs1c clswimm6    1..0=0 15..13=1                       ->  fld   cfdc crs1c clswimm6
+opcode c.fsd cfdlc crs1c clswimm6    1..0=0 15..13=5                       ->  fsd   crs2c crs1c clswimm6
+
+opcode c.fldsp     cfd   ciImm6      1..0=2 15..13=1                       ->  fld   cfd  x2   ciImm6
+opcode c.fsdsp     cfs2  ciImm6w     1..0=2 15..13=5                       ->  fsd   cfs2 x2   ciImm6w

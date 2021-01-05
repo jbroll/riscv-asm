@@ -1,0 +1,56 @@
+# RV64B additions to RV32B
+
+opcode bmatflip   rd rs1 31..20=0x603 14..12=1 6..2=0x04 1..0=3
+opcode crc32.d    rd rs1 31..20=0x613 14..12=1 6..2=0x04 1..0=3
+opcode crc32c.d   rd rs1 31..20=0x61B 14..12=1 6..2=0x04 1..0=3
+
+opcode bmator     rd rs1 rs2 31..25=4  14..12=3 6..2=0x0C 1..0=3
+opcode bmatxor    rd rs1 rs2 31..25=36 14..12=3 6..2=0x0C 1..0=3
+
+opcode slli.uw    rd rs1 31..26=2 shamt 14..12=1 6..2=0x06 1..0=3
+
+opcode add.uw     rd rs1 rs2 31..25=4  14..12=0 6..2=0x0E 1..0=3
+
+opcode slow       rd rs1 rs2 31..25=16 14..12=1 6..2=0x0E 1..0=3
+opcode srow       rd rs1 rs2 31..25=16 14..12=5 6..2=0x0E 1..0=3
+opcode rolw       rd rs1 rs2 31..25=48 14..12=1 6..2=0x0E 1..0=3
+opcode rorw       rd rs1 rs2 31..25=48 14..12=5 6..2=0x0E 1..0=3
+
+opcode sbclrw     rd rs1 rs2 31..25=36 14..12=1 6..2=0x0E 1..0=3
+opcode sbsetw     rd rs1 rs2 31..25=20 14..12=1 6..2=0x0E 1..0=3
+opcode sbinvw     rd rs1 rs2 31..25=52 14..12=1 6..2=0x0E 1..0=3
+opcode sbextw     rd rs1 rs2 31..25=36 14..12=5 6..2=0x0E 1..0=3
+opcode gorcw      rd rs1 rs2 31..25=20 14..12=5 6..2=0x0E 1..0=3
+opcode grevw      rd rs1 rs2 31..25=52 14..12=5 6..2=0x0E 1..0=3
+
+opcode sloiw      rd rs1 31..26=8  25=0 shamtw 14..12=1 6..2=0x06 1..0=3
+opcode sroiw      rd rs1 31..26=8  25=0 shamtw 14..12=5 6..2=0x06 1..0=3
+opcode roriw      rd rs1 31..26=24 25=0 shamtw 14..12=5 6..2=0x06 1..0=3
+
+opcode sbclriw    rd rs1 31..26=18 25=0 shamtw 14..12=1 6..2=0x06 1..0=3
+opcode sbsetiw    rd rs1 31..26=10 25=0 shamtw 14..12=1 6..2=0x06 1..0=3
+opcode sbinviw    rd rs1 31..26=26 25=0 shamtw 14..12=1 6..2=0x06 1..0=3
+opcode gorciw     rd rs1 31..26=10 25=0 shamtw 14..12=5 6..2=0x06 1..0=3
+opcode greviw     rd rs1 31..26=26 25=0 shamtw 14..12=5 6..2=0x06 1..0=3
+
+opcode fslw       rd rs1 rs2 rs3 26..25=2 14..12=1 6..2=0x0E 1..0=3
+opcode fsrw       rd rs1 rs2 rs3 26..25=2 14..12=5 6..2=0x0E 1..0=3
+opcode fsriw      rd rs1 shamtw rs3 26..25=2 14..12=5 6..2=0x06 1..0=3
+
+opcode clzw       rd rs1 31..20=0x600 14..12=1 6..2=0x06 1..0=3
+opcode ctzw       rd rs1 31..20=0x601 14..12=1 6..2=0x06 1..0=3
+opcode cpopw      rd rs1 31..20=0x602 14..12=1 6..2=0x06 1..0=3
+
+opcode sh1add.uw  rd rs1 rs2 31..25=16 14..12=2 6..2=0x0E 1..0=3
+opcode sh2add.uw  rd rs1 rs2 31..25=16 14..12=4 6..2=0x0E 1..0=3
+opcode sh3add.uw  rd rs1 rs2 31..25=16 14..12=6 6..2=0x0E 1..0=3
+
+opcode shflw      rd rs1 rs2 31..25=4  14..12=1 6..2=0x0E 1..0=3
+opcode unshflw    rd rs1 rs2 31..25=4  14..12=5 6..2=0x0E 1..0=3
+opcode bcompressw rd rs1 rs2 31..25=4  14..12=6 6..2=0x0E 1..0=3
+opcode bdecompressw rd rs1 rs2 31..25=36 14..12=6 6..2=0x0E 1..0=3
+opcode packw      rd rs1 rs2 31..25=4  14..12=4 6..2=0x0E 1..0=3
+opcode packuw     rd rs1 rs2 31..25=36 14..12=4 6..2=0x0E 1..0=3
+opcode bfpw       rd rs1 rs2 31..25=36 14..12=7 6..2=0x0E 1..0=3
+
+opcode xperm.w    rd rs1 rs2 31..25=20 14..12=0 6..2=0x0C 1..0=3
