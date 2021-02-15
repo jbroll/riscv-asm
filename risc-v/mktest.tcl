@@ -43,14 +43,27 @@ proc pickreg { $arg } { lindex [set ::$arg] [rand 20] }
 proc opcode { op args } {
     lsplit $args args mapp
 
+    printOp $op {*}$args 
+    if { [llength $mapp] } {
+        printOp {*}$mapp 
+    }
+}
+
+proc printOp { op args } {
+
     set ll {}
     set n 0
 
     set n 2
+    set prev {}
     foreach arg $args {
-        incr n
-        if { $arg == "aqrl" } {
-            #lappend ll x
+        if { $prev ne $arg } {
+            incr n
+        }
+        set prev $arg
+
+        if { $arg in { aqrl pred succ } } {
+            continue
         }
         if { $arg == "rm" } {
             lappend ll dyn
@@ -71,18 +84,30 @@ proc opcode { op args } {
             }
             continue
         }
+        if { [string first .. $arg] >= 0 || [string first = $arg] >= 0 } {
+            continue
+        }
+
+        lappend ll $arg
     }
 
-    set instr "$op [join $ll]"
+    set li $ll
+    switch -glob $op {
+      c.addi16sp  {         ; # Force use of c.addi16sp not c.addi
+          set li "256"
+      }
+    }
+
+    set instr "$op [join $li]"
     switch -glob $op {
       amo* {
           lset ll 2 "([lindex $ll 2])"
       }
-      lw - lh - lhu - lb - lbu - sw - sh - sb - fsw - flw - fld - fsd - flq - fsq - c.lw - c.sw - c.flw - c.fsw - c.fld - c.fsd - c.ld - c.sd {
+      ld - lw - lh - lhu - lb - lbu - sd - sw - sh - sb - fsw - flw - fld - fsd - flq - fsq - c.lw - c.sw - c.flw - c.fsw - c.fld - c.fsd - c.ld - c.sd {
           set ll [lreplace $ll 1 2 [arg3 $ll]([arg2 $ll])]
       }
       c.addi16sp  {
-          set ll "sp 16"
+          set ll "sp 256"
       }
       c.addi4spn {
           set ll "[lindex $ll 0] sp 16"
@@ -94,7 +119,7 @@ proc opcode { op args } {
           lset ll end "([lindex $ll end])"
       }
     }
-    puts "$op [join $ll ","]       # $instr"
+    puts "$op [join $ll ","]       ; # $instr"
 }
 
 proc main { org args } {

@@ -61,15 +61,20 @@ proc immediate { name Bits } {
     }
     set expr [join $expr |]
 
-    proc ::tcl::mathfunc::$name { value } [% {
-        if { [info exists ::LABEL(%value)] } {
-            set value [expr { %::LABEL(%value) - %::LABEL(.) }]
+    proc ::tcl::mathfunc::label { value } {
+        if { [info exists ::LABEL($value)] } {
+            return [expr { $::LABEL($value) - $::LABEL(.) }]
         }
+        return $value
+    }
+
+    proc ::tcl::mathfunc::$name { value } [% {
+        set value [::tcl::mathfunc::label %value]
         return [expr { $expr }]
     }]
 
     set size [expr { exp2($hi) }]
-    proc tcl::mathfunc::match_$name v [% { expr { %v < $size } }]
+    proc tcl::mathfunc::match_$name v [% { expr { label(%v) < $size } }]
 }
 
 namespace eval ::tcl::mathfunc {

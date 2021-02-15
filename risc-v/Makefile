@@ -19,7 +19,9 @@ H32_INSTRUCTIONS = 	opcodes/opcodes-rvc	\
 test32: $(W32_INSTRUCTIONS) $(H32_INSTRUCTIONS)
 	./asm-test w32 		 rv32g   $(W32_INSTRUCTIONS)
 	./asm-test h32 		 rv32gc  $(H32_INSTRUCTIONS)
-	./asm-test w32-short rv32gc  $(W32_INSTRUCTIONS)
+
+test32c: $(W32_INSTRUCTIONS) $(H32_INSTRUCTIONS)
+	./asm-test w32-c rv32gc  $(W32_INSTRUCTIONS)
 
 
 W64_INSTRUCTIONS = 	opcodes/opcodes-rv32i 	\

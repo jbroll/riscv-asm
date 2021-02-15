@@ -1,23 +1,22 @@
 # compressed instructions
 
-immediate  nzimm6    12|6..2
-immediate  nzimm8    10..6|12..11|5|6|xx
-immediate  cbimm6    12|6..2
-immediate  cbshamt6  12|6..2
-immediate  cbshamt5     6..2
-immediate  ciimm6    12|6..2
-immediate  ciImm6    3..2|12|6..4|xx
-immediate  ciImm6w   8..7|12..9|xx
-immediate  cbimm8    12|6..5|2|11..10|4..3|x
-immediate  clswimm6  5|12..10|6|xx
-immediate  clsdimm6  6..5|12..10|xxx
-immediate  cjimm11   12|8|10..9|6|7|2|11|5..3|x
+immediate  nzimm6     12|6..2
+immediate  nzimm6sp   12|4..3|5|2|6|xxxx
+immediate  nzimm8     10..6|12..11|5|6|xx
+immediate  cbimm6     12|6..2
+immediate  cbshamt6   12|6..2
+immediate  cbshamt5      6..2
+immediate  ciimm6     12|6..2
+immediate  ciImm6     3..2|12|6..4|xx
+immediate  ciImm6w    8..7|12..9|xx
+immediate  cbimm8     12|6..5|2|11..10|4..3|x
+immediate  clswimm6   5|12..10|6|xx
+immediate  clsdimm6   6..5|12..10|xxx
+immediate  cjimm11    12|8|10..9|6|7|2|11|5..3|x
 
 opcode c.nop                       1..0=1 15..13=0 12=0 11..7=0 6..2=0     ->  nop
-opcode c.addi16sp  nzimm6          1..0=1 15..13=3      11..7=2            ->  addi   x2    x2 nzimm6
-opcode c.jr        crs1nz          1..0=2 15..13=4 12=0         6..2=0     ->  jalr   x0   crs1nz 0
-opcode c.jalr      crs1nz          1..0=2 15..13=4 12=1         6..2=0     ->  jalr   x1   crs1nz 0
 opcode c.ebreak                    1..0=2 15..13=4 12=1 11..7=0 6..2=0     ->  ebreak
+opcode c.addi16sp  nzimm6sp        1..0=1 15..13=3      11..7=2            ->  addi   x2    x2 nzimm6sp
 
 # C0 encoding space
 #
@@ -43,6 +42,9 @@ opcode c.j             cjimm11      1..0=1 15..13=5                        ->  j
 #
 opcode c.lwsp     crdnz ciImm6      1..0=2 15..13=2                        ->  lw   crdnz   x2   ciImm6
 opcode c.swsp     crs2  ciImm6w     1..0=2 15..13=6                        ->  sw    crs2   x2   ciImm6w
-opcode c.mv       crdnz crs2nz      1..0=2 15..13=4 12=0                   ->  add  crdnz   x0   rs2nz
+opcode c.mv       crdnz crs2nz      1..0=2 15..13=4 12=0                   ->  add  crdnz   x0   crs2nz
 opcode c.add      crdnz crs2nz      1..0=2 15..13=4 12=1                   ->  add  crdnz  crdnz crs2nz
+
+opcode c.jr        crs1nz          1..0=2 15..13=4 12=0         6..2=0     ->  jalr   x0   crs1nz 0
+opcode c.jalr      crs1nz          1..0=2 15..13=4 12=1         6..2=0     ->  jalr   x1   crs1nz 0
 

@@ -6,14 +6,14 @@ opcode c.sd         crs2c crs1c clswimm6  1..0=0 15..13=7                  -> sd
 
 # C1 encoding space
 opcode c.subw       crdhc crs2c           1..0=1 15..13=4 12=1      11..10=3 6..5=0  -> subw  crdhc crdhc crs2c
-opcode c.addw       crdhc crs2c           1..0=1 15..13=4 12=1      11..10=3 6..5=1  -> addw  crdnz  crdnz crs2nz
+opcode c.addw       crdhc crs2c           1..0=1 15..13=4 12=1      11..10=3 6..5=1  -> addw  crdhc crdhc crs2c
 opcode c.addiw      rdnz  nzimm6          1..0=1 15..13=1                            -> addiw rdnz  rdnz  nzimm6
 
 # C2 encoding space
 opcode c.ldsp     crdnz ciImm6            1..0=2 15..13=3                  ->  ld   crdnz   x2   ciImm6    
 opcode c.sdsp     crs2  ciImm6w           1..0=2 15..13=7                  ->  sd    crs2   x2   ciImm6w
 
-opcode c.slli    crdnz cbshamt6           1..0=2 15..13=0                  ->  slli  crd   crd   cbshamt6
+opcode c.slli    crdnz cbshamt6           1..0=2 15..13=0                  ->  slli crdnz crdnz cbshamt6
 opcode c.srli    crdhc cbshamt6           1..0=1 15..13=4 11..10=0         ->  srli crdhc crdhc cbshamt6
 opcode c.srai    crdhc cbshamt6           1..0=1 15..13=4 11..10=1         ->  srai crdhc crdhc cbshamt6
 
