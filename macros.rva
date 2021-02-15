@@ -32,6 +32,9 @@ macro dec { rd }    { add rd rd -1 }
 macro mv  { rd rs } { addi rd rs 0 }
 macro not { rd rs } { xori rd rs -1 }
 alias not rd -> not rd rd
-macro neg { rd rs } { sub rd x0 $rs }
+macro neg { rd rs } { sub rd x0 rs }
 alias neg rd -> neg rd rd
+macro jr { r } {
+    jalr x0 r 0
+}
 

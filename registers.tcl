@@ -13,8 +13,8 @@ set reg [reg-names {  x0   x1   x2   x3  x4  x5  x6  x7
 }]
 if { [iset e] } { set reg [lrange $reg 0 15] }
 
-set apinz [lrange $api 2 end]
-set regnz [lrange $reg 2 end]
+set apinz [dict remove $api   zero]
+set regnz [dict remove $reg   x0]
 set apin2 [dict remove $apinz sp] 
 set regn2 [dict remove $regnz x2] 
 
@@ -50,8 +50,8 @@ if { [iset zfinx] } {
     }]
     if { [iset e] } { set regfp [lrange $regfp 0 15] }
 }
-set apifpnz [lrange $apifp 2 end]
-set regfpnz [lrange $regfp 2 end]
+set apifpnz [dict remove $apifp zero]
+set regfpnz [dict remove $regfp f0]
 
 register  fd 11.._7  $regfp $apifp
 register fs1 19..15  $regfp $apifp

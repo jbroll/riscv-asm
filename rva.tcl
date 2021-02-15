@@ -4,6 +4,7 @@ source $::env(HOME)/src/jbr.tcl/func.tcl
 source $::env(HOME)/src/jbr.tcl/list.tcl
 source $::env(HOME)/src/jbr.tcl/shim.tcl
 source $::env(HOME)/src/jbr.tcl/unix.tcl
+source $::env(HOME)/src/jbr.tcl/string.tcl
 
 namespace eval rva {}
 namespace eval rva::registers {}
@@ -186,7 +187,7 @@ proc opcode { op args } {
 }
 
 proc assemble { opcode instr } {
-    set line [dict get [info frame -2] line]
+    set line [dict get [info frame 4] line]
 
     if { ($opcode & 0x00000003) == 0x00000003 } { 
         print [format " %05d %04X %08X   %s"     $line $::LABEL(.) [expr { $opcode & 0xffffffff }] $instr]
@@ -240,7 +241,7 @@ proc reg-names { names } {
 proc main { args } {
 
     set March rv32IMAFDZicsr_Zifencei
-    set match {^rv(32|64)(i|e)?(m)?(a)?(f)?(d)?(q)?(c)?((z[a-y]*)?(_(z[a-y]*))*)$}
+    set match {^rv(32|64)(i|e)?(m)?(a)?(f)?(d)?(q)?(c)?((z[a-z]*)?(_(z[a-z]*))*)((_x[a-z]+)*)$}
 
     set files {}
     for { set i 0 } { $i < [llength $args] } { incr i } {
@@ -255,18 +256,23 @@ proc main { args } {
 
     if { [string index $march 4] eq "g" } {
         set march [string replace $march 4 4 "imafd"]
-        append march _zicsr_zifencei
+        set x [string first _x $march]
+        if { $x == -1 } {
+            set x end
+        }
+        set march [string insert $march $x "_zicsr_zifencei"]
     }
 
-    if { [regexp -- $match $march -> XLEN I M A F D Q C Z] <= 0 } {
+    if { [regexp -- $match $march -> XLEN I M A F D Q C Z - - - X] <= 0 } {
         error "incorrect march string $March --> $march"
     }
-    set ::iset [dict create xlen $XLEN i $I m $M a $A f $F d $D q $Q c $C]
+    set ::iset [dict create rlen $XLEN i $I m $M a $A f $F d $D q $Q c $C]
     if { [dict get $::iset i] eq "e" } {
         dict set ::iset i i
         dict set ::iset e e
     }
-    foreach i [split $Z _] { dict set ::iset $i $i }
+    foreach z [split $Z _] { dict set ::iset $z $z }
+    foreach x [split $X _] { dict set ::iset $x $x }
     if { [iset e] } {
         dict set ::iset i i
     }
@@ -283,7 +289,7 @@ proc main { args } {
     if { [iset q] } { include opcodes/opcodes-rv32q }
 
     if { [iset c] } { include opcodes/opcodes-rvc }
-    if { [dict get $::iset xlen] == 32 } {
+    if { [dict get $::iset rlen] == 32 } {
         if { [iset c] }               { include opcodes/opcodes-rv32c }
         if { [iset c] && [iset f]   } { include opcodes/opcodes-rv32fc }
     }
@@ -292,7 +298,7 @@ proc main { args } {
     if { [iset d] && [iset zfh] } { include opcodes/opcodes-rv32d-zfh }
     if { [iset q] && [iset zfh] } { include opcodes/opcodes-rv32q-zfh }
 
-    if { [dict get $::iset xlen] == 64 } {
+    if { [dict get $::iset rlen] == 64 } {
         include opcodes/opcodes-rv64i                       ; # Always.
 
         if { [iset m] } { include opcodes/opcodes-rv64m }
@@ -310,10 +316,7 @@ proc main { args } {
     if { [iset zicsr] }    { include opcodes/opcodes-zicsr      }
     if { [iset zifencei] } { include opcodes/opcodes-zifencei   }
 
-    set zextn { zfh zicsr zifencei zfinx }                  ; # Standard Z extensions
-    set uextn [dict keys [dict remove $::iset {*}$zextn] z*]
-
-    foreach extn $uextn {
+    foreach extn [dict keys $::iset x*] {
         include extension/opcodes-$extn
     }
 
