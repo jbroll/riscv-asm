@@ -181,11 +181,13 @@ proc opcode { op args } {
 }
 
 proc assemble { opcode instr } {
+    set line [dict get [info frame -2] line]
+
     if { ($opcode & 0x00000003) == 0x00000003 } { 
-        print [format "%04X %08X" $::LABEL(.) [expr { $opcode & 0xffffffff }] ] $instr
+        print [format " %05d %04X %08X   %s"     $line $::LABEL(.) [expr { $opcode & 0xffffffff }] $instr]
         incr ::LABEL(.) 4
     } else {
-        print [format "%04X %04X" $::LABEL(.) [expr { $opcode & 0x0000ffff }] ] $instr
+        print [format " %05d %04X %04X       %s" $line $::LABEL(.) [expr { $opcode & 0x0000ffff }] $instr]
         incr ::LABEL(.) 2
     }
 }
