@@ -6,6 +6,8 @@ source $::env(HOME)/src/jbr.tcl/shim.tcl
 source $::env(HOME)/src/jbr.tcl/unix.tcl
 source $::env(HOME)/src/jbr.tcl/string.tcl
 
+set root [file dirname [file normalize [info script]]]
+
 namespace eval rva {}
 namespace eval rva::registers {}
 
@@ -187,7 +189,7 @@ proc opcode { op args } {
 }
 
 proc assemble { opcode instr } {
-    set line [dict get [info frame 4] line]
+    set line [dict get [info frame 3] line]
 
     if { ($opcode & 0x00000003) == 0x00000003 } { 
         print [format " %05d %04X %08X   %s"     $line $::LABEL(.) [expr { $opcode & 0xffffffff }] $instr]
@@ -199,7 +201,7 @@ proc assemble { opcode instr } {
 }
 
 proc include { file } {
-    source $file
+    source $::root/$file
 }
 
 proc macro { name args body } {
@@ -277,7 +279,7 @@ proc main { args } {
         dict set ::iset i i
     }
 
-    source registers.tcl
+    include registers.tcl
 
     include opcodes/opcodes-rv32i                           ; # Always include rv32i
 
@@ -326,7 +328,7 @@ proc main { args } {
         if { $file eq "-" } {
             eval [read stdin]
         } else {
-            include $file
+            source $file
         }
     }
 }

@@ -135,7 +135,7 @@ proc main { org args } {
     }
 }
 
-source ./registers.tcl
+source ../registers.tcl
 
 main {*}$argv
 
