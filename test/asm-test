@@ -30,5 +30,5 @@ if [ ! -s $tmp/$name.join ] ; then
 fi
 
 if [ -s $tmp/$name.cmp ] ; then
-    cat $tmp/$name.cmp | fldtotable line address gas rva:5 op:6- | justify
+    cat $tmp/$name.cmp
 fi
