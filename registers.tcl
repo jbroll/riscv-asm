@@ -73,8 +73,6 @@ set apc   [reg-names [lrange [dict keys $api]   8 15]]
 set rxc   [reg-names [lrange [dict keys $reg]   8 15]]
 set afc   [reg-names [lrange [dict keys $apifp] 8 15]]
 set rfc   [reg-names [lrange [dict keys $regfp] 8 15]]
-set afcnz [lrange $apifp  2 15]
-set rfcnz [lrange $regfp  2 15]
 
 register crd     11..7  $reg   $api
 register crs1    11..7  $reg   $api
@@ -90,10 +88,8 @@ register crs2c  4..2  $rxc $apc
 register crdhc  9..7  $rxc $apc
 register crdlc  4..2  $rxc $apc
 
-register cfdc    4..2  $rfc   $afc  
-register cfs1c   9..7  $rfc   $afc  
-register cfdcnz  4..2  $rfcnz $afcnz
-register cfs1cnz 9..7  $rfcnz $afcnz
-register cfdhc   9..7  $rfc $afc
-register cfdlc   4..2  $rfc $afc
+register cfdc   4..2  $rfc $afc  
+register cfs1c  9..7  $rfc $afc  
+register cfdhc  9..7  $rfc $afc
+register cfdlc  4..2  $rfc $afc
 
