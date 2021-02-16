@@ -1,0 +1,3 @@
+[submodule "jbr.tcl"]
+	path = jbr.tcl
+	url = git@github.com:jbroll/jbr.tcl.git

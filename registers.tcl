@@ -1,3 +1,7 @@
+# These are the register definitions for standard extensions.  If you create an extension 
+# that uses standard registers you can just use these register types.  If you need to 
+# create additional regiters for your opcodes, you can use the `register` proc at the top of
+# your opcodes-xaaa extension file.
 
 set api [reg-names { zero  ra   sp   gp  tp  t0  t1  t2  
                        s0  s1   a0   a1  a2  a3  a4  a5  

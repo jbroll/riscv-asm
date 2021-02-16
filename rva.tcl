@@ -1,14 +1,14 @@
 #!/usr/bin/env tclkit8.6
 #
-source $::env(HOME)/src/jbr.tcl/func.tcl
-source $::env(HOME)/src/jbr.tcl/list.tcl
-source $::env(HOME)/src/jbr.tcl/shim.tcl
-source $::env(HOME)/src/jbr.tcl/unix.tcl
-source $::env(HOME)/src/jbr.tcl/string.tcl
-
 set root [file dirname [file normalize [info script]]]
 
-namespace eval rva {}
+source $root/jbr.tcl/func.tcl
+source $root/jbr.tcl/list.tcl
+source $root/jbr.tcl/shim.tcl
+source $root/jbr.tcl/unix.tcl
+source $root/jbr.tcl/string.tcl
+
+namespace eval rva {}                   ; # Someday everything will live here
 namespace eval rva::registers {}
 
 proc % { body } {
@@ -71,11 +71,15 @@ proc immediate { name Bits } {
         return $value
     }
 
+    # Create a function that computes the bits of an immediate.
+    # 
     proc ::tcl::mathfunc::$name { value } [% {
         set value [::tcl::mathfunc::label %value]
         return [expr { $expr }]
     }]
 
+    # Create a function that checks the validity of an immediate.
+    # TODO: Check sign/unsigned value and use abs().
     set size [expr { exp2($hi) }]
     proc tcl::mathfunc::match_$name v [% { expr { label(%v) < $size } }]
 }
@@ -119,14 +123,15 @@ namespace eval ::tcl::mathfunc {
     proc match_0  vx { expr { $vx ==   0 } }
 }
 
+# Add a curry for the op, allowing defaults in at any arg position
+#
 proc alias { op args } {
     rename $op _$op
     lsplit $args fr to
     set tt {}
     foreach arg $to {
         if { $arg in $fr } { lappend tt \$$arg
-        } else {             lappend tt $arg
-        }
+        } else {             lappend tt $arg    }
     }
     proc $op { args } [subst {
         if { \[llength \$args] == [llength $fr] } {
@@ -165,20 +170,27 @@ proc opcode { op args } {
     dict set ::opcode $op vars $vars
 
     if { $mapp ne {} } {                                                            ; # Build a short op map?
-        set mvals [lassign $mapp mop]
+        set mvals [lassign $mapp mop]                                               ; # Split mop and mvals
         set mpars [dict get $::opcode $mop pars]
         set mvars [dict get $::opcode $mop vars]
-        set vvv   [join [map p [string map [zip $mvals $mpars] $pars] { I "\$$p" }] " "]
 
-        if { [llength $mpars] } {
+        # Map the passed args from the op to the mop - adding $ expansion.
+        #
+        set vvv  [join [map p [string map [zip $mvals $mpars] $pars] { I "\$$p" }] " "]
+
+        if { [llength $mpars] } {                                                   ; # If there are args
+            # Create an expression to check the validity of the args for mop
+            #
             set expr [join [map m $mpars p $mvals { concat match_${p}(\$$m) }] " && "]
-            if { [lindex $mvals 0] == [lindex $mvals 1] } {
+            if { [lindex $mvals 0] == [lindex $mvals 1] } {                         ; # Special case arg1 == arg2
                 append expr " && \$[lindex $mpars 0] eq \$[lindex $mpars 1]"
             }
         } else {
             set expr 1 
         }
 
+        # Shim out the implementation of .mop to check if op is applicable and use that instead
+        #
         shim .$mop $mpars [% {
             if { $expr } {
                 return [.$op $vvv]
@@ -200,6 +212,8 @@ proc assemble { opcode instr } {
     }
 }
 
+# Source a file with the script instlled directory prefix
+#
 proc include { file } {
     source $::root/$file
 }
@@ -215,6 +229,8 @@ proc .org { org } { set ::LABEL(.) $org }
 proc .global { args } {}
 proc .text { args } {}
 
+# Catch unknown commands in the .rva file and treat them as labels is they end in ':'
+#
 proc unknown { args } {
     switch -regex -- $args {
         {[0-9a-zA-Z_]+:} { : [string range $args 0 end-1] }
@@ -224,6 +240,8 @@ proc unknown { args } {
     }   
 }
 
+# Introduce a label in the .rva file
+#
 proc : { name args } {
     set ::LABEL($name) $::LABEL(.)
     if { [llength $args] } {
@@ -231,18 +249,24 @@ proc : { name args } {
     }
 }
 
+# A convenience proc to check an instruction set request.
+#
 proc iset { iset } {
     expr { [dict exists $::iset $iset] && [dict get $::iset $iset] eq $iset }
 }
 
+# Convert a list of valid register names into a dict for reg -> value map.
+#
 proc reg-names { names } {
     zip $names [iota 0 [llength $names]-1]
 }
 
-
 proc main { args } {
 
-    set March rv32IMAFDZicsr_Zifencei
+    set March rv32IMAFDZicsr_Zifencei                           ; # The default march
+
+    # A regex to extract the march definition and check the order (somewhat).
+    #
     set match {^rv(32|64)(i|e)?(m)?(a)?(f)?(d)?(q)?(c)?((z[a-z]*)?(_(z[a-z]*))*)((_x[a-z]+)*)$}
 
     set files {}
@@ -258,7 +282,7 @@ proc main { args } {
 
     if { [string index $march 4] eq "g" } {
         set march [string replace $march 4 4 "imafd"]
-        set x [string first _x $march]
+        set x [string first _x $march]                          ; # _Z must come before _X.
         if { $x == -1 } {
             set x end
         }
@@ -269,17 +293,14 @@ proc main { args } {
         error "incorrect march string $March --> $march"
     }
     set ::iset [dict create rlen $XLEN i $I m $M a $A f $F d $D q $Q c $C]
-    if { [dict get $::iset i] eq "e" } {
-        dict set ::iset i i
+    if { [dict get $::iset i] eq "e" } {        # ; The base arch is either I or E.
+        dict set ::iset i i                     # ; E means I instructions w/ 16 registers
         dict set ::iset e e
     }
     foreach z [split $Z _] { dict set ::iset $z $z }
     foreach x [split $X _] { dict set ::iset $x $x }
-    if { [iset e] } {
-        dict set ::iset i i
-    }
 
-    include registers.tcl
+    include registers.tcl                                   ; # Register definitions for standard extensions.
 
     include opcodes/opcodes-rv32i                           ; # Always include rv32i
 
