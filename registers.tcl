@@ -64,15 +64,6 @@ register fs3 31..27  $regfp $apifp
 
 enum rm 14..12 "expected rounding mode" { rne 0 rtz 1 rnd 2 rup 3 rmm 4 dyn 7 }
 
-set apin2 $api
-dict remove $apin2 x0
-dict remove $apin2 x2
-
-set regn2 $reg
-dict remove $regn2 x0
-set apin2 $reg
-dict remove $apin2 x2
-
 set apc   [reg-names [lrange [dict keys $api]   8 15]]
 set rxc   [reg-names [lrange [dict keys $reg]   8 15]]
 set afc   [reg-names [lrange [dict keys $apifp] 8 15]]

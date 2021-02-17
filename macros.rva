@@ -27,6 +27,8 @@ proc pop { args } {
 }
 
 macro jmp { tgt }   { jal zero tgt }
+macro ret { rd }   { jal zero rd  }
+alias ret -> ret ra
 macro inc { rd }    { add rd rd  1 }
 macro dec { rd }    { add rd rd -1 }
 macro mv  { rd rs } { addi rd rs 0 }
