@@ -70,14 +70,14 @@ namespace eval ::elf {
         ELFCLASS64-ELFDATA2MSB-segment { size 56   names {$v_prg}   scan {Iu Iu Wu Wu Wu Wu Wu Wu} }
         ELFCLASS32-ELFDATA2LSB-symbol  { size 16   names {$v_sym32} scan {iu iu iu cu cu su} }
         ELFCLASS32-ELFDATA2MSB-symbol  { size 16   names {$v_sym32} scan {Iu Iu Iu cu cu Su} }
-        ELFCLASS64-ELFDATA2LSB-symbol  { size  0   names {$v_sym64} scan {iu cu cu su wu wu} }
-        ELFCLASS64-ELFDATA2MSB-symbol  { size  0   names {$v_sym64} scan {Iu cu cu Su Wu Wu} }
+        ELFCLASS64-ELFDATA2LSB-symbol  { size 24   names {$v_sym64} scan {iu cu cu su wu wu} }
+        ELFCLASS64-ELFDATA2MSB-symbol  { size 24   names {$v_sym64} scan {Iu cu cu Su Wu Wu} }
     }]
 }
 
-::oo::class create ::elf::elffile {
+::oo::class create ::elf::elf {
 
-    constructor {} {
+    constructor { { file {} } } {
         my variable elfdata position
         my variable v_sec v_prg v_sym32
         my variable sections ;  set sections [list [list sh_index {*}$::elf::v_sec]]
@@ -85,10 +85,15 @@ namespace eval ::elf {
         my variable symbols  ;  set symbols  [list [list st_index {*}$::elf::v_sym32 st_shnm st_bind st_type]]
         my variable my_class ;  set my_class ""
         my variable my_data  ;  set my_data  ""
+
+        if { $file ne {} } {
+            my readFile $file
+        }
     }
     method sections {} { my variable sections ;  set sections }
     method segments {} { my variable segments ;  set segments }
     method symbols  {} { my variable symbols  ;  set symbols  }
+    method header   {} { my variable elfheader;  set elfheader}
 
     method readFile {fname} {
         with file = [::open $fname rb] {
@@ -266,12 +271,14 @@ namespace eval ::elf {
         set strings [my readStringTable]
 
         set symheader [my getSectionHeaderByName .symtab]
+
         dict with symheader {
             if {$sh_type ne "SHT_SYMTAB"} {
                 error "expected symbol table section type of SHT_SYMTAB, got $sh_type\
             }
             my seekData $sh_offset
             set nSyms [expr {$sh_size / $sh_entsize}]
+
             for {set symindex 0} {$symindex < $nSyms} {incr symindex} {
                 set sym [dict merge [list st_index $symindex] [my scanData symbol]]
 
