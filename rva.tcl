@@ -6,6 +6,7 @@ source $root/jbr.tcl/func.tcl
 source $root/jbr.tcl/list.tcl
 source $root/jbr.tcl/shim.tcl
 source $root/jbr.tcl/unix.tcl
+source $root/jbr.tcl/stack.tcl
 source $root/jbr.tcl/string.tcl
 
 namespace eval rva {}                   ; # Someday everything will live here
@@ -117,9 +118,9 @@ namespace eval ::tcl::mathfunc {
         expr { msk2($n1 eq "" ? $n2 + 1 : $n1 + 1, $n2) }
     }
 
-    proc match_x0 rd { expr { $rd eq "x0" } }
-    proc match_x1 rd { expr { $rd eq "x1" } }
-    proc match_x2 rd { expr { $rd eq "x2" } }
+    proc match_x0 rd { expr { $rd eq "x0" || $rd eq "zero" } }
+    proc match_x1 rd { expr { $rd eq "x1" || $rd eq "ra"   } }
+    proc match_x2 rd { expr { $rd eq "x2" || $rd eq "sp"   } }
     proc match_0  vx { expr { $vx ==   0 } }
 }
 

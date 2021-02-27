@@ -2,8 +2,10 @@
 .org    0x0100
 
 top:
+    push    ra a1 a2
     add     a0 a1 a2
     la      t0 top
-    jr      t0
+    pop
+    jr      ra
 
     

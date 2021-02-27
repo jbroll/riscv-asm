@@ -11,7 +11,7 @@ arch=$1;  shift
 ./mktest.tcl 0x0000 "$@" > $tmp/$name.s
 
 cat $tmp/$name.s | 
-/usr/local/Cellar/riscv-gnu-toolchain/master.reinstall/bin/riscv64-unknown-elf-as -march=$arch -al -o $tmp/$name.o |
+/usr/local/Cellar/riscv-gnu-toolchain/master/bin/riscv64-unknown-elf-as -march=$arch -al -o $tmp/$name.o |
 awk '$1 ~ /^[0-9]+/ { $1 = sprintf("%05d", $1); $0 = $0; print }' \
 > $tmp/$name.lst
 

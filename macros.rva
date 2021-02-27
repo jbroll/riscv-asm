@@ -5,7 +5,7 @@ macro la { rd symbol } {
 }
 
 proc push { args } {
-    set ::PUSHED $args
+    lpush ::PUSHED $args
     set i 4
     foreach arg $args {
         sw $arg sp $i
@@ -16,7 +16,7 @@ proc push { args } {
 
 proc pop { args } {
     if { [llength $args] == 0 } {
-        set args $::PUSHED
+        set args [lpop ::PUSHED]
     }
     set i -4
     foreach arg [lreverse $args] {
