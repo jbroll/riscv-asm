@@ -1,6 +1,6 @@
 
 package require Tcl 8.6
-#source util.tcl
+source ../jbr.tcl/with.tcl
 source ../jbr.tcl/list.tcl
 source ../jbr.tcl/dict.tcl
 source ../jbr.tcl/func.tcl
@@ -47,7 +47,6 @@ namespace eval ::elf {
     } { concat [expr { $v }] $s }]]
     enum create CPU_TYPE $cpu_types
     
-
     set v_ident { elfmag0 elfmagName ei_class ei_data ei_version ei_osabi ei_abiversion ei_pad }
     set v_hdr   { e_type e_machine e_version e_entry e_phoff e_shoff e_flags e_ehsize e_phentsize e_phnum e_shentsize e_shnum e_shstrndx }
     set v_sec   { sh_name sh_type sh_flags sh_addr sh_offset sh_size sh_link sh_info sh_addralign sh_entsize }
@@ -65,10 +64,10 @@ namespace eval ::elf {
         ELFCLASS32-ELFDATA2MSB-section { size 40   names {$v_sec}   scan {Iu Iu Iu Iu Iu Iu Iu Iu Iu Iu} }
         ELFCLASS64-ELFDATA2LSB-section { size 64   names {$v_sec}   scan {iu iu wu wu wu wu iu iu wu wu} }
         ELFCLASS64-ELFDATA2MSB-section { size 64   names {$v_sec}   scan {Iu Iu Wu Wu Wu Wu Iu Iu Wu Wu} }
-        ELFCLASS32-ELFDATA2LSB-prog    { size 32   names {$v_prg}   scan {iu iu iu iu iu iu iu iu} }
-        ELFCLASS32-ELFDATA2MSB-prog    { size 32   names {$v_prg}   scan {Iu Iu Iu Iu Iu Iu Iu Iu} }
-        ELFCLASS64-ELFDATA2LSB-prog    { size 56   names {$v_prg}   scan {iu iu wu wu wu wu wu wu} }
-        ELFCLASS64-ELFDATA2MSB-prog    { size 56   names {$v_prg}   scan {Iu Iu Wu Wu Wu Wu Wu Wu} }
+        ELFCLASS32-ELFDATA2LSB-segment { size 32   names {$v_prg}   scan {iu iu iu iu iu iu iu iu} }
+        ELFCLASS32-ELFDATA2MSB-segment { size 32   names {$v_prg}   scan {Iu Iu Iu Iu Iu Iu Iu Iu} }
+        ELFCLASS64-ELFDATA2LSB-segment { size 56   names {$v_prg}   scan {iu iu wu wu wu wu wu wu} }
+        ELFCLASS64-ELFDATA2MSB-segment { size 56   names {$v_prg}   scan {Iu Iu Wu Wu Wu Wu Wu Wu} }
         ELFCLASS32-ELFDATA2LSB-symbol  { size 16   names {$v_sym32} scan {iu iu iu cu cu su} }
         ELFCLASS32-ELFDATA2MSB-symbol  { size 16   names {$v_sym32} scan {Iu Iu Iu cu cu Su} }
         ELFCLASS64-ELFDATA2LSB-symbol  { size  0   names {$v_sym64} scan {iu cu cu su wu wu} }
@@ -82,34 +81,21 @@ namespace eval ::elf {
         my variable elfdata position
         my variable v_sec v_prg v_sym32
         my variable sections ;  set sections [list [list sh_index {*}$::elf::v_sec]]
-        my variable program  ;  set program  [list [list  p_index {*}$::elf::v_prg]]
+        my variable segments ;  set segments [list [list  p_index {*}$::elf::v_prg]]
         my variable symbols  ;  set symbols  [list [list st_index {*}$::elf::v_sym32 st_shnm st_bind st_type]]
         my variable my_class ;  set my_class ""
         my variable my_data  ;  set my_data  ""
     }
-    method sections {} {
-        my variable sections
-        set sections
-    }
-    method segments {} {
-        my variable program
-        set program
-    }
-    method symbols {} {
-        my variable symbols
-        set symbols
-    }
+    method sections {} { my variable sections ;  set sections }
+    method segments {} { my variable segments ;  set segments }
+    method symbols  {} { my variable symbols  ;  set symbols  }
+
     method readFile {fname} {
-        set elfchan [::open $fname rb]
-        try {
-            return [my readChan $elfchan]
-        } finally {
-            chan close $elfchan
+        with file = [::open $fname rb] {
+            return [my readChan $file]
         }
     }
     method readChan {chan} {
-        # Make sure we are in binary mode!
-        chan configure $chan -translation binary
         return [my decodeData [chan read $chan]]
     }
     method decodeData {data} {
@@ -118,7 +104,7 @@ namespace eval ::elf {
         variable elfheader [my readElfHeader]
         dict with elfheader {
             my readSecHeaders  $e_shoff $e_shnum $e_shentsize $e_shstrndx
-            my readProgHeaders $e_phoff $e_phnum $e_phentsize
+            my readSegHeaders $e_phoff $e_phnum $e_phentsize
             my readSymTable
         }
         return $elfheader
@@ -212,7 +198,6 @@ namespace eval ::elf {
             set sec_hdr [my scanData section]
             dict update sec_hdr sh_type sh_type {
                 set sh_type [::elf::SH_TYPE toSym $sh_type]
-                #set sh_flags [my XlateFlagBits sh_flags $sh_flags]
             }
     
             lappend sections [dict values [dict merge [list sh_index $secNo] $sec_hdr]]
@@ -222,26 +207,21 @@ namespace eval ::elf {
         set sh_name [table colnum $sections sh_name]
         for {set secNo 0} {$secNo < $e_shnum} {incr secNo} {   ; # Set the section string names
             set offset [table get $sections $secNo $sh_name]
-            table set sections $secNo $sh_name [dict get $shstrings $offset]
+            table set sections $secNo $sh_name [my getString $shstrings $offset]
         }
     }
-    method readProgHeaders {e_phoff e_phnum e_phentsize} {
-        variable elfheader
-        eprint $elfheader
-        eprint readProgHeaders $e_phoff $e_phnum $e_phentsize
-        if {$e_phnum == 0} {
-            return
-        }
+    method readSegHeaders {e_phoff e_phnum e_phentsize} {
+        variable segments
         my seekData $e_phoff                                   ; # Seek to where the section header table is
     
-        for {set phNo 0} {$phNo < $e_phnum} {incr phNo} {
-            set prg_hdr [my scanData prog]
-            dict update $prg_hdr p_type p_type p_flags p_flags {
-                set p_type  [P_TYPE  toSym $p_type]
-                set p_flags [P_FLAGS toSym $p_flags]
+        for {set segNo 0} {$segNo < $e_phnum} {incr segNo} {
+            set seg_hdr [my scanData segment]
+            dict update seg_hdr p_type p_type p_flags p_flags {
+                set p_type  [::elf::PR_TYPE  toSym $p_type]
+                #set p_flags [::elf::P_FLAGS toSym $p_flags]
             }
 
-            lappend sections [dict merge [list p_index $phNo] $prg_hdr]
+            lappend segments [dict values [dict merge [list p_index $segNo] $seg_hdr]]
         }
     }
     method readStrings {sh_offset sh_size} {
@@ -258,23 +238,27 @@ namespace eval ::elf {
     
         return $strings
     }
+    method getString { strings offset } {
+        catch { return [dict get $strings $offset] } 
+
+        # Not all the requested indicies are at the start of a string table entry.
+        #
+        foreach {pos value} $strings {
+            if { $pos > $offset } { break }
+            set string $value
+            set index  $pos
+        }
+
+        string range $string [expr { $offset - $index }] end
+    }
     method readStringTable {} {
         set strheader [my getSectionHeaderByName .strtab]
-        if {[llength $strheader] eq {}} {
-            error "cannot find string table section named, \".strtab\""
+        dict import strheader sh_type sh_offset sh_size
+
+        if {$sh_type ne "SHT_STRTAB"} {
+            error "expected symbol table section type of SHT_STRTAB, got $sh_type"
         }
-        dict with strheader {
-            if {$sh_type ne "SHT_STRTAB"} {
-                error "expected symbol table section type of \"SHT_STRTAB\",\
-                        got \"$sh_type\""
-            }
-            if {$sh_entsize != 0} {
-                error "expected zero string table entry size,\
-                        got \"$sh_entsize\""
-            }
-            set symnames [my readStrings $sh_offset $sh_size]
-        }
-        return $symnames
+        my readStrings $sh_offset $sh_size
     }
 
     method readSymTable {} {
@@ -284,8 +268,7 @@ namespace eval ::elf {
         set symheader [my getSectionHeaderByName .symtab]
         dict with symheader {
             if {$sh_type ne "SHT_SYMTAB"} {
-                error "expected symbol table section type of \"SHT_SYMTAB\",\
-                        got \"$sh_type\""
+                error "expected symbol table section type of SHT_SYMTAB, got $sh_type\
             }
             my seekData $sh_offset
             set nSyms [expr {$sh_size / $sh_entsize}]
@@ -296,7 +279,7 @@ namespace eval ::elf {
                 if { $st_shndx == 0 } {
                     continue
                 }
-                dict set sym st_name [dict get $strings $st_name]
+                dict set sym st_name [my getString $strings $st_name]
                 dict set sym st_shnm [table get $sections $st_shndx 1]
                 dict set sym st_bind [::elf::ST_BIND toSym [expr { $st_info >>   4 }]]
                 dict set sym st_type [::elf::ST_TYPE toSym [expr { $st_info &  0xf }]]
@@ -340,29 +323,6 @@ namespace eval ::elf {
 
         return [zip $names [map name $names { set $name }]]
     }
-    method XlateFlagBits {symtype value} {
-        set result [list]
-        set bitsyms [pipe {
-            relvar set [classns]::ElfBitSymbol |
-            relation restrictwith ~ {$SymbolType eq $symtype}
-        }]
-        relation foreach bitsym $bitsyms -ascending Offset {
-            relation assign $bitsym SymbolName Offset Length
-            # Compute a mask from the bit field definition.
-            set mask [expr {((1 << $Length) - 1) <<  $Offset}]
-            set mvalue [expr {$value & $mask}]
-            if {$mvalue != 0} {
-                # We treat single bit fields differently. Multi-bit fields have a
-                # value associated with them.
-                if {$Length == 1} {
-                    lappend result $SymbolName
-                } else {
-                    lappend result "$SymbolName\([expr {$mvalue >> $Offset}]\)"
-                }
-            }
-        }
-        return $result
-    }
 
     set et_range { ET_LOOS { 0xfe00 0xfeff } ET_LOPROC { 0xff00 0xffff } }
     set sh_range { SHT_LOOS { 0x60000000 0x6fffffff } SHT_LOPROC { 0x70000000 0x7fffffff } }
@@ -376,15 +336,5 @@ namespace eval ::elf {
     set p_flags  { PF_X 1   PF_W 2  PF_R 4         PF_MASKOS 12:8 PF_MASKPROC  28:4     }
 }
 
-package provide elfdecode $::elf::version
-
-elf::elffile create e
-e readFile ../a.out
-
-print [table justify [e sections]]
-print
-print [table justify [e segments]]
-print
-print [table justify [e symbols]]
-print
+package provide elf $::elf::version
 
