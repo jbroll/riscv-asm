@@ -136,23 +136,10 @@ namespace eval ::elf {
 
 ::oo::class create ::elf::elf {
 
-    method getSectionDecode { type } {
-        my variable my_class
-        if { [dict exists $::elf::sectionDecode $type] } {
-            return [dict get $::elf::sectionDecode $type]
-        }
-
-        dict get $::elf::sectionDecode $my_class-$type
-    }
-
     constructor { { file {} } } {
         namespace eval [self namespace] { namespace path [list ::elf [namespace path]] }
-        my variable elfdata position
-        my variable v_sec v_prg v_sym32
         my variable my_class ;  set my_class ""
         my variable my_data  ;  set my_data  ""
-
-        my variable S
 
         if { $file ne {} } {
             my readFile $file
@@ -187,6 +174,15 @@ namespace eval ::elf {
             }
         }
         return $elfheader
+    }
+
+    method getSectionDecode { type } {
+        my variable my_class
+        if { [dict exists $::elf::sectionDecode $type] } {
+            return [dict get $::elf::sectionDecode $type]
+        }
+
+        dict get $::elf::sectionDecode $my_class-$type
     }
 
     method getHeader { item type expr } {
