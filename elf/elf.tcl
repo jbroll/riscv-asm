@@ -50,6 +50,9 @@ namespace eval ::elf {
     set v_prg   { p_type p_offset p_vaddr p_paddr p_filesz p_memsz p_flags p_align }
     set v_sym32 { st_name st_value st_size st_info st_other st_shndx }
     set v_sym64 { st_name st_info st_other st_shndx st_value st_size }
+    set v_rel   { r_offset r_info }
+    set v_rela  { r_offset r_info r_addend }
+    set v_note  { n_name n_desc n_type }
 
     set formats [% {
                              --ident   { size 16   names {$v_ident} scan {cu a3 cu cu cu cu cu cu7} }
@@ -69,6 +72,20 @@ namespace eval ::elf {
         ELFCLASS32-ELFDATA2MSB-symbol  { size 16   names {$v_sym32} scan {Iu Iu Iu cu cu Su} }
         ELFCLASS64-ELFDATA2LSB-symbol  { size 24   names {$v_sym64} scan {iu cu cu su wu wu} }
         ELFCLASS64-ELFDATA2MSB-symbol  { size 24   names {$v_sym64} scan {Iu cu cu Su Wu Wu} }
+
+        ELFCLASS32-ELFDATA2LSB-rel     { size  8   names {$v_rel}   scan {iu iu} }
+        ELFCLASS32-ELFDATA2MSB-rel     { size  8   names {$v_rel}   scan {Iu Iu} }
+        ELFCLASS64-ELFDATA2LSB-rel     { size 16   names {$v_rel}   scan {wu wu} }
+        ELFCLASS64-ELFDATA2MSB-rel     { size 16   names {$v_rel}   scan {Wu Wu} }
+        ELFCLASS32-ELFDATA2LSB-rela    { size 12   names {$v_rela}  scan {iu iu iu} }
+        ELFCLASS32-ELFDATA2MSB-rela    { size 12   names {$v_rela}  scan {Iu Iu Iu} }
+        ELFCLASS64-ELFDATA2LSB-rela    { size 24   names {$v_rela}  scan {wu wu wu} }
+        ELFCLASS64-ELFDATA2MSB-rela    { size 24   names {$v_rela}  scan {Wu Wu Wu} }
+
+        ELFCLASS32-ELFDATA2LSB-note    { size 16   names {$v_note}  scan {iu iu iu} }
+        ELFCLASS32-ELFDATA2MSB-note    { size 16   names {$v_note}  scan {Iu Iu Iu} }
+        ELFCLASS64-ELFDATA2LSB-note    { size 24   names {$v_note}  scan {wu wu wu} }
+        ELFCLASS64-ELFDATA2MSB-note    { size 24   names {$v_note}  scan {Wu Wu Wu} }
     }]
 }
 
@@ -104,6 +121,7 @@ namespace eval ::elf {
         return [my decodeData [chan read $chan]]
     }
     method decodeData {data} {
+        variable S
         variable elfdata  $data
         variable position 0
         variable elfheader [my readElfHeader]
@@ -111,6 +129,17 @@ namespace eval ::elf {
             my readSectionHeaders $e_shoff [expr { $e_shnum * $e_shentsize }] $e_shstrndx
             my readSegmentHeaders $e_phoff [expr { $e_phnum * $e_phentsize }] 
             my readSymbolTable
+            table foreachrow $S(sections) {
+                switch $sh_type {
+                    SHT_REL  { my readHeaders $sh_name rel  $sh_offset $sh_size r_index {} }
+                    SHT_RELA { my readHeaders $sh_name rela $sh_offset $sh_size r_index {} }
+                    SHT_NOTE { 
+                        my readHeaders $sh_name note $sh_offset $sh_size n_index {
+                            eprint $note
+                        }
+                    }
+                }
+            }
         }
         return $elfheader
     }
