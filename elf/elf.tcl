@@ -108,7 +108,6 @@ namespace eval ::elf {
         variable position 0
         variable elfheader [my readElfHeader]
         dict with elfheader {
-            eprint $elfheader
             my readSectionHeaders $e_shoff [expr { $e_shnum * $e_shentsize }] $e_shstrndx
             my readSegmentHeaders $e_phoff [expr { $e_phnum * $e_phentsize }] 
             my readSymbolTable
