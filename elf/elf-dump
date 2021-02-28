@@ -297,6 +297,8 @@ proc eprint { args } { puts stderr $args }
 
 namespace eval table {
     namespace export header body row col nth todict tolist colnum setcell getcell justify rows cols
+    namespace export foreachrow
+
     namespace ensemble create
 
     proc header { tbl } {
@@ -328,6 +330,18 @@ namespace eval table {
     }
     proc cols { tbl } { llength [lindex $tbl 0] }
     proc rows { tbl } { llength $tbl }
+
+    proc foreachrow { tbl rowName { script {} } } {
+        if { $script eq "" } {
+            set script $rowName
+            set rowName row
+        }
+        upvar $rowName row
+
+        foreach row [table body $tbl] {
+            uplevel "lassign \$row [table header $tbl] ; " $script
+        }
+    }
 
     proc colnum { tbl colname } {
         set header [header $tbl]
@@ -441,10 +455,10 @@ namespace eval ::elf {
         ELFCLASS32-ELFDATA2MSB-section { size 40   names {$v_sec}   scan {Iu Iu Iu Iu Iu Iu Iu Iu Iu Iu} }
         ELFCLASS64-ELFDATA2LSB-section { size 64   names {$v_sec}   scan {iu iu wu wu wu wu iu iu wu wu} }
         ELFCLASS64-ELFDATA2MSB-section { size 64   names {$v_sec}   scan {Iu Iu Wu Wu Wu Wu Iu Iu Wu Wu} }
-        ELFCLASS32-ELFDATA2LSB-program { size 32   names {$v_prg}   scan {iu iu iu iu iu iu iu iu} }
-        ELFCLASS32-ELFDATA2MSB-program { size 32   names {$v_prg}   scan {Iu Iu Iu Iu Iu Iu Iu Iu} }
-        ELFCLASS64-ELFDATA2LSB-program { size 56   names {$v_prg}   scan {iu iu wu wu wu wu wu wu} }
-        ELFCLASS64-ELFDATA2MSB-program { size 56   names {$v_prg}   scan {Iu Iu Wu Wu Wu Wu Wu Wu} }
+        ELFCLASS32-ELFDATA2LSB-segment { size 32   names {$v_prg}   scan {iu iu iu iu iu iu iu iu} }
+        ELFCLASS32-ELFDATA2MSB-segment { size 32   names {$v_prg}   scan {Iu Iu Iu Iu Iu Iu Iu Iu} }
+        ELFCLASS64-ELFDATA2LSB-segment { size 56   names {$v_prg}   scan {iu iu wu wu wu wu wu wu} }
+        ELFCLASS64-ELFDATA2MSB-segment { size 56   names {$v_prg}   scan {Iu Iu Wu Wu Wu Wu Wu Wu} }
         ELFCLASS32-ELFDATA2LSB-symbol  { size 16   names {$v_sym32} scan {iu iu iu cu cu su} }
         ELFCLASS32-ELFDATA2MSB-symbol  { size 16   names {$v_sym32} scan {Iu Iu Iu cu cu Su} }
         ELFCLASS64-ELFDATA2LSB-symbol  { size 24   names {$v_sym64} scan {iu cu cu su wu wu} }
@@ -455,22 +469,25 @@ namespace eval ::elf {
 ::oo::class create ::elf::elf {
 
     constructor { { file {} } } {
+        namespace eval [self namespace] { namespace path [list ::elf [namespace path]] }
         my variable elfdata position
         my variable v_sec v_prg v_sym32
-        my variable sections ;  set sections [list [list sh_index {*}$::elf::v_sec]]
-        my variable programs ;  set programs [list [list  p_index {*}$::elf::v_prg]]
-        my variable symbols  ;  set symbols  [list [list st_index {*}$::elf::v_sym32 st_shnm st_bind st_type]]
         my variable my_class ;  set my_class ""
         my variable my_data  ;  set my_data  ""
+
+        my variable S
+        set S(sections) [list [list sh_index {*}$::elf::v_sec]]
+        set S(segments) [list [list  p_index {*}$::elf::v_prg]]
+        set S(symbols)  [list [list st_index {*}$::elf::v_sym32 st_shnm st_bind st_type]]
 
         if { $file ne {} } {
             my readFile $file
         }
     }
-    method sections {} { my variable sections ;  set sections }
-    method programs {} { my variable programs ;  set programs }
-    method symbols  {} { my variable symbols  ;  set symbols  }
     method header   {} { my variable elfheader;  set elfheader}
+    method sections {} { my variable S ;  set S(sections) }
+    method segments {} { my variable S ;  set S(segments) }
+    method symbols  {} { my variable S ;  set S(symbols)  }
 
     method readFile {fname} {
         with file = [::open $fname rb] {
@@ -485,24 +502,25 @@ namespace eval ::elf {
         variable position 0
         variable elfheader [my readElfHeader]
         dict with elfheader {
-            my readSectionHeaders $e_shoff $e_shnum $e_shstrndx
-            my readProgramHeaders $e_phoff $e_phnum 
+            eprint $elfheader
+            my readSectionHeaders $e_shoff [expr { $e_shnum * $e_shentsize }] $e_shstrndx
+            my readSegmentHeaders $e_phoff [expr { $e_phnum * $e_phentsize }] 
             my readSymbolTable
         }
         return $elfheader
     }
 
     method getHeader { item type expr } {
-        variable $type
+        variable S
         pipe {
-            set $type |
+            set S($type) |
             table row ~ item $expr |
             table todict ~
         }
     }
     method getSectionHeaderByName  { item } { my getHeader $item sections { $sh_name  eq $item } }
     method getSectionHeaderByIndex { item } { my getHeader $item sections { $sh_index == $item } }
-    method getProgramHeaderByIndex { item } { my getHeader $item programs {  $p_index == $item } }
+    method getSegmentHeaderByIndex { item } { my getHeader $item segments {  $p_index == $item } }
     method getSymbolByName         { item } { my getHeader $item symbols  { $st_name  eq $item } }
     method getSymbolByIndex        { item } { my getHeader $item symbols  { $st_index == $item } }
 
@@ -511,11 +529,11 @@ namespace eval ::elf {
         my Read $offset $size
     }
     method getSectionDataByIndex { index } { my getSectionData [my getSectionHeaderByIndex $index] sh_offset sh_size   }
-    method getProgramDataByIndex { index } { my getSectionData [my getSectionHeaderByIndex $index]  p_offset  p_filesz }
+    method getSegmentDataByIndex { index } { my getSectionData [my getSectionHeaderByIndex $index]  p_offset  p_filesz }
     method getSectionDataByName  { name  } { my getSectionData [my getSectionHeaderByName $name]   sh_offset sh_size   }
 
     method readElfHeader {} {
-        set ident [my scanData ident]                       ; # Read the 16 byte identifier field check  for an ELF file. 
+        set ident [my scanDataWithFormat ident]                 ; # Read the 16 byte identifier field check  for an ELF file. 
     
         dict import ident elfmag0 elfmagName ei_class ei_data
         if {$elfmag0 != 0x7f || $elfmagName ne "ELF"} {
@@ -523,18 +541,19 @@ namespace eval ::elf {
         }
 
         dict update ident ei_class ei_class ei_data ei_data {
-            set ei_class [::elf::EI_CLASS toSym $ei_class]
-            set ei_data  [::elf::EI_DATA  toSym $ei_data]
+            set ei_class [EI_CLASS toSym $ei_class]
+            set ei_data  [EI_DATA  toSym $ei_data]
         }
 
         my variable my_class my_data
         set my_class $ei_class
         set my_data  $ei_data
     
-        set other [my scanData header]                       ; # Convert the remainder of the header.
-        dict update other e_type e_type e_version e_version {
-            set e_type    [::elf::E_TYPE    toSym $e_type]
-            set e_version [::elf::E_VERSION toSym $e_version]
+        set other [my scanDataWithFormat header]                ; # Convert the remainder of the header.
+        dict update other e_type e_type e_version e_version e_machine e_machine {
+            set e_machine [CPU_TYPE  toSym $e_machine]
+            set e_type    [E_TYPE    toSym $e_type]
+            set e_version [E_VERSION toSym $e_version]
         }
     
         dict merge $ident $other
@@ -551,43 +570,46 @@ namespace eval ::elf {
     method readSectionNames { sh_index } { my readStringsFromSection [my getSectionHeaderByIndex $sh_index] }
     method readStringTable  {}           { my readStringsFromSection [my getSectionHeaderByName .strtab] }
 
-    method readHeaders { type format offset n indexName update } {
-        variable $type
-        my seekData $offset                                     ; # Seek to where the section header table is located.
+    method readHeaders { type format offset size indexName update } {
+        variable S
+        set here [my seekData $offset]                          ; # Seek to where the section header table is located.
+        set end [expr { $here + $size }]
 
         upvar $format header
-        for {set i 0} {$i < $n} {incr i} {                      ; # Read and convert the entire array of section headers.
-            set header [my scanData $format]
+        for { set i 0 } { $here < $end } { incr i } {                      ; # Read and convert the entire array of section headers.
+            set header [my scanDataWithFormat $format]
             uplevel $update
     
-            lappend $type [dict values [dict merge [list $indexName $i] $header]]
+            lappend S($type) [dict values [dict merge [list $indexName $i] $header]]
+            set here [my tellData]
         }
     }
-    method readSectionHeaders { e_shoff e_shnum e_shstrndx } {
-        variable sections
-        my readHeaders sections section $e_shoff $e_shnum sh_index {
+    method readSectionHeaders { offset size e_shstrndx } {
+        my variable S
+        my readHeaders sections section $offset $size sh_index {
             dict update section sh_type sh_type {
-                set sh_type [::elf::SH_TYPE toSym $sh_type]
+                set sh_type [SH_TYPE toSym $sh_type]
             }
         }
 
         set shstrings [my readSectionNames $e_shstrndx]
-        set sh_name [table colnum $sections sh_name]
-        for {set secNo 0} {$secNo < $e_shnum} {incr secNo} {    ; # Set the section string names
-            set offset [table get $sections $secNo $sh_name]
-            table set sections $secNo $sh_name [my getString $shstrings $offset]
+        set sh_nameCol [table colnum $S(sections) sh_name]
+        set n 0
+        table foreachrow $S(sections) {
+            table set S(sections) $n $sh_nameCol [my getString $shstrings $sh_name]
+            incr n
         }
     }
-    method readProgramHeaders {e_phoff e_phnum } {
-        my readHeaders programs program $e_phoff $e_phnum p_index {
-            dict update program p_type p_type p_flags p_flags {
-                set p_type  [::elf::PR_TYPE  toSym $p_type]
-                #set p_flags [::elf::P_FLAGS toSym $p_flags]
+    method readSegmentHeaders { offset size } {
+        my readHeaders segments segment $offset $size p_index {
+            dict update segment p_type p_type p_flags p_flags {
+                set p_type   [PR_TYPE  toSym $p_type]
+                #set p_flags [P_FLAGS toSym $p_flags]
             }
         }
     }
     method readSymbolTable {} {
-        my variable sections symbols 
+        my variable S
         set strings   [my readStringTable]
         set symheader [my getSectionHeaderByName .symtab]
 
@@ -595,23 +617,21 @@ namespace eval ::elf {
         if {$sh_type ne "SHT_SYMTAB"} {
             error "expected symbol table section type of SHT_SYMTAB, got $sh_type"
         }
-        my seekData $sh_offset
-        set nSyms [expr {$sh_size / $sh_entsize}]
 
-        my readHeaders symbols symbol $sh_offset $nSyms st_index {
+        my readHeaders symbols symbol $sh_offset $sh_size st_index {
             dict import symbol st_name st_info st_shndx
             if { $st_shndx == 0 } {
                 continue
             }
+            dict set symbol st_shnm [table get $S(sections) $st_shndx 1]
+            dict set symbol st_bind [ST_BIND toSym [expr { $st_info >>   4 }]]
             dict set symbol st_name [my getString $strings $st_name]
-            dict set symbol st_shnm [table get $sections $st_shndx 1]
-            dict set symbol st_bind [::elf::ST_BIND toSym [expr { $st_info >>   4 }]]
-            dict set symbol st_type [::elf::ST_TYPE toSym [expr { $st_info &  0xf }]]
+            dict set symbol st_type [ST_TYPE toSym [expr { $st_info &  0xf }]]
         }
     }
 
     method readStrings { sh_offset sh_size } {
-        set data [my readData $sh_offset $sh_size]
+        set data [my readDataAt $sh_offset $sh_size]
         set strOff 0
         set strings { 0 {} }
         foreach s [split $data "\0"] {           ; # The strings are just packed NUL terminated ASCII strings.
@@ -637,14 +657,21 @@ namespace eval ::elf {
 
         string range $string [expr { $offset - $index }] end
     }
+    method tellData { } {
+        my variable position
+        set position
+    }
     method seekData { here } {
         my variable elfdata position
         set position [expr { min(max($here, 0), [string length $elfdata]) }]
     }
-    method readData {offset count} {
+    method readDataAt { offset count } {
+        my seekData $offset
+        my readData $count
+    }
+    method readData { count } {
         my variable elfdata position
     
-        my seekData $offset
         set end [expr {$position + $count - 1}]
         if {$end >= [string length $elfdata]} {
             error "attempt to read beyond end of ELF data"
@@ -657,10 +684,11 @@ namespace eval ::elf {
         my variable my_class my_data
         dict values [dict get $::elf::formats $my_class-$my_data-$fmt]
     }
-    method scanData { fmt } {
+    method scanDataWithFormat { fmt } {
+        my scanData {*}[my getScan $fmt]
+    }
+    method scanData { size names scan } {
         my variable elfdata position
-
-        lassign [my getScan $fmt] size names scan
 
         set cvtd [binary scan $elfdata "@$position $scan" {*}$names]
         if {$cvtd != [llength $names]} {
@@ -668,7 +696,7 @@ namespace eval ::elf {
         }
         set position [expr { min(max($position + $size, 0), [string length $elfdata]) }]
 
-        return [zip $names [map name $names { set $name }]]
+        zip $names [map name $names { set $name }]
     }
 
     set et_range { ET_LOOS { 0xfe00 0xfeff } ET_LOPROC { 0xff00 0xffff } }
@@ -689,12 +717,20 @@ package provide elf $::elf::version
 
 set e [elf::elf create e [lindex $argv 0]]
 
-print $argv
-print [join [$e header] \n]
+set header [e header]
+dict with header {
+    print [subst {
+    $argv : $ei_class $ei_data v$ei_version type $e_type
+        $e_machine
+        Entry: [format 0x%08X $e_entry]
+        phoff: [format 0x%08X $e_phoff] phentsize: [format %4d $e_phentsize] phnum: [format %4d $e_phnum]  ehsize: $e_ehsize flags: $e_flags
+        shoff: [format 0x%08X $e_shoff] shentsize: [format %4d $e_shentsize] shnum: [format %4d $e_shnum] strindx: $e_shstrndx
+    }]
+}
 print
 print [table justify [$e sections]]
 print
-print [table justify [$e programs]]
+print [table justify [$e segments]]
 print
 print [table justify [$e symbols]]
 
