@@ -108,8 +108,9 @@ namespace eval ::elf {
         variable position 0
         variable elfheader [my readElfHeader]
         dict with elfheader {
-            my readSectionHeaders $e_shoff $e_shnum $e_shstrndx
-            my readSegmentHeaders $e_phoff $e_phnum 
+            eprint $elfheader
+            my readSectionHeaders $e_shoff [expr { $e_shnum * $e_shentsize }] $e_shstrndx
+            my readSegmentHeaders $e_phoff [expr { $e_phnum * $e_phentsize }] 
             my readSymbolTable
         }
         return $elfheader
@@ -175,35 +176,38 @@ namespace eval ::elf {
     method readSectionNames { sh_index } { my readStringsFromSection [my getSectionHeaderByIndex $sh_index] }
     method readStringTable  {}           { my readStringsFromSection [my getSectionHeaderByName .strtab] }
 
-    method readHeaders { type format offset n indexName update } {
+    method readHeaders { type format offset size indexName update } {
         variable S
-        my seekData $offset                                     ; # Seek to where the section header table is located.
+        set here [my seekData $offset]                          ; # Seek to where the section header table is located.
+        set end [expr { $here + $size }]
 
         upvar $format header
-        for {set i 0} {$i < $n} {incr i} {                      ; # Read and convert the entire array of section headers.
+        for { set i 0 } { $here < $end } { incr i } {                      ; # Read and convert the entire array of section headers.
             set header [my scanDataWithFormat $format]
             uplevel $update
     
             lappend S($type) [dict values [dict merge [list $indexName $i] $header]]
+            set here [my tellData]
         }
     }
-    method readSectionHeaders { e_shoff e_shnum e_shstrndx } {
+    method readSectionHeaders { offset size e_shstrndx } {
         my variable S
-        my readHeaders sections section $e_shoff $e_shnum sh_index {
+        my readHeaders sections section $offset $size sh_index {
             dict update section sh_type sh_type {
                 set sh_type [SH_TYPE toSym $sh_type]
             }
         }
 
         set shstrings [my readSectionNames $e_shstrndx]
-        set sh_name [table colnum $S(sections) sh_name]
-        for {set secNo 0} {$secNo < $e_shnum} {incr secNo} {    ; # Set the section string names
-            set offset [table get $S(sections) $secNo $sh_name]
-            table set S(sections) $secNo $sh_name [my getString $shstrings $offset]
+        set sh_nameCol [table colnum $S(sections) sh_name]
+        set n 0
+        table foreachrow $S(sections) {
+            table set S(sections) $n $sh_nameCol [my getString $shstrings $sh_name]
+            incr n
         }
     }
-    method readSegmentHeaders {e_phoff e_phnum } {
-        my readHeaders segments segment $e_phoff $e_phnum p_index {
+    method readSegmentHeaders { offset size } {
+        my readHeaders segments segment $offset $size p_index {
             dict update segment p_type p_type p_flags p_flags {
                 set p_type   [PR_TYPE  toSym $p_type]
                 #set p_flags [P_FLAGS toSym $p_flags]
@@ -219,10 +223,8 @@ namespace eval ::elf {
         if {$sh_type ne "SHT_SYMTAB"} {
             error "expected symbol table section type of SHT_SYMTAB, got $sh_type"
         }
-        my seekData $sh_offset
-        set nSyms [expr {$sh_size / $sh_entsize}]
 
-        my readHeaders symbols symbol $sh_offset $nSyms st_index {
+        my readHeaders symbols symbol $sh_offset $sh_size st_index {
             dict import symbol st_name st_info st_shndx
             if { $st_shndx == 0 } {
                 continue
@@ -235,7 +237,7 @@ namespace eval ::elf {
     }
 
     method readStrings { sh_offset sh_size } {
-        set data [my readData $sh_offset $sh_size]
+        set data [my readDataAt $sh_offset $sh_size]
         set strOff 0
         set strings { 0 {} }
         foreach s [split $data "\0"] {           ; # The strings are just packed NUL terminated ASCII strings.
@@ -261,14 +263,21 @@ namespace eval ::elf {
 
         string range $string [expr { $offset - $index }] end
     }
+    method tellData { } {
+        my variable position
+        set position
+    }
     method seekData { here } {
         my variable elfdata position
         set position [expr { min(max($here, 0), [string length $elfdata]) }]
     }
-    method readData {offset count} {
+    method readDataAt { offset count } {
+        my seekData $offset
+        my readData $count
+    }
+    method readData { count } {
         my variable elfdata position
     
-        my seekData $offset
         set end [expr {$position + $count - 1}]
         if {$end >= [string length $elfdata]} {
             error "attempt to read beyond end of ELF data"
