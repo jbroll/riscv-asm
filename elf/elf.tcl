@@ -138,7 +138,7 @@ namespace eval ::elf {
     method getSectionDataByName  { name  } { my getSectionData [my getSectionHeaderByName $name]   sh_offset sh_size   }
 
     method readElfHeader {} {
-        set ident [my scanData ident]                       ; # Read the 16 byte identifier field check  for an ELF file. 
+        set ident [my scanDataWithFormat ident]                 ; # Read the 16 byte identifier field check  for an ELF file. 
     
         dict import ident elfmag0 elfmagName ei_class ei_data
         if {$elfmag0 != 0x7f || $elfmagName ne "ELF"} {
@@ -154,7 +154,7 @@ namespace eval ::elf {
         set my_class $ei_class
         set my_data  $ei_data
     
-        set other [my scanData header]                       ; # Convert the remainder of the header.
+        set other [my scanDataWithFormat header]                ; # Convert the remainder of the header.
         dict update other e_type e_type e_version e_version e_machine e_machine {
             set e_machine [CPU_TYPE  toSym $e_machine]
             set e_type    [E_TYPE    toSym $e_type]
@@ -181,7 +181,7 @@ namespace eval ::elf {
 
         upvar $format header
         for {set i 0} {$i < $n} {incr i} {                      ; # Read and convert the entire array of section headers.
-            set header [my scanData $format]
+            set header [my scanDataWithFormat $format]
             uplevel $update
     
             lappend S($type) [dict values [dict merge [list $indexName $i] $header]]
@@ -281,10 +281,11 @@ namespace eval ::elf {
         my variable my_class my_data
         dict values [dict get $::elf::formats $my_class-$my_data-$fmt]
     }
-    method scanData { fmt } {
+    method scanDataWithFormat { fmt } {
+        my scanData {*}[my getScan $fmt]
+    }
+    method scanData { size names scan } {
         my variable elfdata position
-
-        lassign [my getScan $fmt] size names scan
 
         set cvtd [binary scan $elfdata "@$position $scan" {*}$names]
         if {$cvtd != [llength $names]} {
@@ -292,7 +293,7 @@ namespace eval ::elf {
         }
         set position [expr { min(max($position + $size, 0), [string length $elfdata]) }]
 
-        return [zip $names [map name $names { set $name }]]
+        zip $names [map name $names { set $name }]
     }
 
     set et_range { ET_LOOS { 0xfe00 0xfeff } ET_LOPROC { 0xff00 0xffff } }
