@@ -1,0 +1,700 @@
+#!/usr/bin/env tclkit8.6
+#
+
+package require Tcl 8.6
+
+proc ::tcl::dict::lappend2 {dict args} { 
+    upvar 1 $dict d 
+
+    if { ![dict exists $d {*}[lrange $args 0 end-1]] } { 
+        dict set d {*}[lrange $args 0 end-1] [list [lindex $args end]]
+    } else {
+        ::set list [dict get $d {*}[lrange $args 0 end-1]]
+        ::lappend list [lindex $args end] 
+        dict set d {*}[lrange $args 0 end-1] $list
+    }
+} 
+namespace ensemble configure dict -map [dict merge [namespace ensemble configure dict -map] {lappend2 ::tcl::dict::lappend2}] 
+
+
+proc ::tcl::dict::get? {args} {
+
+    try { 		 ::set x [dict get {*}$args]
+    } on error message { ::set x {} }
+
+    return $x
+}
+namespace ensemble configure dict -map [dict merge [namespace ensemble configure dict -map] {get? ::tcl::dict::get?}] 
+
+proc ::tcl::dict::get@ {args} {
+
+    try { 		 ::set x [dict get {*}[lrange $args 0 end-1]]
+    } on error message { ::set x [lindex $args end] }
+
+    return $x
+}
+namespace ensemble configure dict -map [dict merge [namespace ensemble configure dict -map] {get@ ::tcl::dict::get@}] 
+
+
+proc ::tcl::dict::import { dict args } {
+    if { [llength $args] == 0 } {
+        set args [dict keys $dict]
+    }
+
+    uplevel 1 [list dict update $dict {*}[zip $args $args] {}]
+}
+namespace ensemble configure dict -map [dict merge [namespace ensemble configure dict -map] {import ::tcl::dict::import}] 
+
+
+::oo::class create enum {
+    constructor { to_sym } {
+        my variable toSym ;    set toSym $to_sym
+        my variable toVal ;    set toVal [zip [dict values $to_sym] [dict keys $to_sym]]
+    }
+
+    method toSym { value } {
+        variable toSym
+        dict get@ $toSym $value $value
+    }
+    method toVal { symbol } {
+        variable toVal
+        dict get@ $toVal $symbol $symbol
+    }
+}
+
+
+proc I { x   } { set x }
+proc K { x y } { set x }
+
+proc +   { x y } { expr $x + $y }
+proc *   { x y } { expr $x * $y }
+proc sum { lst } { foldl + 0 $lst }
+proc sqr { x   } { expr $x * $x }
+proc max { x y } { expr $x > $y ? $x : $y }
+
+
+proc iota { fr { to {} } { in 1 } } {
+    if { $to eq {} } {
+	set to $fr
+	set fr 0
+    }
+    set fr [expr $fr]
+    set to [expr $to]
+
+    for { set res {} } { $fr <= $to+$in*0.5 } { set fr [expr $fr+$in] } {lappend res $fr } 
+    set res
+}
+proc red { args } {
+    return [uplevel [subst {
+        set _[info frame] {}
+        foreach [lrange $args 0 end-1] { set     _[info frame] \[eval {[lindex $args end]}] }
+        set _[info frame]
+    }]]
+}
+
+proc enumerate { list } {
+    set i 0
+    foreach item $list {
+	lappend reply $i $item
+	incr i
+    }
+
+    set reply
+}
+
+proc jot { { nx - } { x0 - } { x1 - } { xi - } } {
+    if { $nx eq "-" } { set nx 10 }
+    if { $x0 eq "-" } { set x0  0 }
+    if { $x1 eq "-" } { set x1 [expr { $x0+$nx-1.0 }] }
+    if { $xi eq "-" } { set xi [expr { ($x1-$x0)/($nx-1.0) }] }
+
+    #puts "jot $nx $x0 $x1 $xi"
+
+    if { $nx == 1 } {
+	expr { ($x0+$x1)/2.0 }
+    } else {
+	#puts [iota $x0 $x1 $xi]
+	iota $x0 $x1 $xi
+    }
+}
+
+proc zip { args } {
+    set n [iota 0 [expr [llength $args]-1]]
+
+    join [map {*}[join [map a $n { list $a [lindex $args $a] }]] "list [join [map i $n { concat $$i }]]"]
+}
+
+
+
+proc map { args } {
+    uplevel [subst {
+	set _[info frame] {}
+	foreach {*}[list [lrange $args 0 end-1]] { lappend _[info frame] \[[lindex $args end]] }
+	set _[info frame]
+    }]
+}
+
+proc pick {func list} {
+    set ret [list]
+    foreach item $list {
+	if {[eval $func [list $item]]} {
+	    lappend ret $item
+	}
+    }
+    return $ret
+}
+
+proc fold {args} {
+    foldl {*}$args
+}
+
+proc foldl {func res list} {
+    foreach item $list { set res [eval $func [list $res $item]] }
+    set res
+}
+
+proc foldr {func res list} {
+    for {set i [llength $list]} {$i > 0} {incr i -1} {
+	set res [eval $func [list [lindex $list [expr {$i-1}]] $res]]
+    }
+    set res
+}
+
+proc lremove { list item } { lsearch -all -inline -not -exact $list $item }
+
+proc shuffle list {		# http://wiki.tcl.tk/941 shuffle10a
+    set len [llength $list]
+    while {$len} {
+	set n [expr {int($len*rand())}]
+	set tmp [lindex $list $n]
+	lset list $n [lindex $list [incr len -1]]
+	lset list $len $tmp
+    }
+    return $list
+}
+
+proc memo { proc } {
+    rename $proc _$proc
+
+    proc $proc { args } [subst -nocommands { 
+	if { [info exists ::_${proc}(\$args)] } { return [set ::_${proc}(\$args)] }
+
+	set ::_${proc}(\$args) [_${proc} {*}\$args]
+    }]
+}
+
+memo iota
+
+
+proc lsplit { list aName bName { on -> } } {
+    upvar $aName a
+    upvar $bName b
+
+    set indx [lsearch $list $on]
+    if { $indx < 0 } {
+        set a $list
+        set b {}
+    } else {
+        set a [lrange $list 0 $indx-1]
+        set b [lrange $list $indx+1 end]
+    }
+}
+
+
+# https://wiki.tcl-lang.org/page/lselect : Larry Smith
+#
+# Returns from the specified list one or more elements identified by given indices.
+# The first element in list is given by index 0, the last element of list is given by "end".
+# An optional negative offset (e.g. "end-1") can be used to specify elements relative to the end of list.
+# The list to operate on is passed by listval.
+proc lselect {listval args} {
+   set result {}
+   if {[llength $listval]>0} {
+      foreach index $args {
+         lappend result [lindex $listval $index]
+      }
+   }
+   return $result
+}
+
+# This software is copyrighted 2013 by G. Andrew Mangogna.
+# The following terms apply to all files associated with the software unless
+# explicitly disclaimed in individual files.
+# 
+# The authors hereby grant permission to use, copy, modify, distribute,
+# and license this software and its documentation for any purpose, provided
+# that existing copyright notices are retained in all copies and that this
+# notice is included verbatim in any distributions. No written agreement,
+# license, or royalty fee is required for any of the authorized uses.
+# Modifications to this software may be copyrighted by their authors and
+# need not follow the licensing terms described here, provided that the
+# new terms are clearly indicated on the first page of each file where
+# they apply.
+# 
+# IN NO EVENT SHALL THE AUTHORS OR DISTRIBUTORS BE LIABLE TO ANY PARTY FOR
+# DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING
+# OUT OF THE USE OF THIS SOFTWARE, ITS DOCUMENTATION, OR ANY DERIVATIVES
+# THEREOF, EVEN IF THE AUTHORS HAVE BEEN ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+# 
+# THE AUTHORS AND DISTRIBUTORS SPECIFICALLY DISCLAIM ANY WARRANTIES,
+# INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.  THIS SOFTWARE
+# IS PROVIDED ON AN "AS IS" BASIS, AND THE AUTHORS AND DISTRIBUTORS HAVE
+# NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS,
+# OR MODIFICATIONS.
+# 
+# GOVERNMENT USE: If you are acquiring this software on behalf of the
+# U.S. government, the Government shall have only "Restricted Rights"
+# in the software and related documentation as defined in the Federal
+# Acquisition Regulations (FARs) in Clause 52.227.19 (c) (2).  If you
+# are acquiring the software on behalf of the Department of Defense,
+# the software shall be classified as "Commercial Computer Software"
+# and the Government shall have only "Restricted Rights" as defined in
+# Clause 252.227-7013 (c) (1) of DFARs.  Notwithstanding the foregoing,
+# the authors grant the U.S. Government and others acting in its behalf
+# permission to use and distribute the software in accordance with the
+# terms specified in this license.
+# Relational expressions are frequently nested to achieve some desired
+# result. This nesting in normal Tcl syntax quickly gets difficult to read.
+# Often the expression is naturally a pipe of the output of one command
+# to the input of another. This idea came from the "Commands pipe" page
+# on the wiki: http://wiki.tcl.tk/17419. The code here is different,
+# but the idea is the same.
+#
+proc pipe {fns {var {}} {sep |~}} {
+    # Split out the separator characters
+    lassign [split $sep {}] s p
+    # Split up the commands based on the separator character, pulling off the
+    # first command.
+    set pipeline [lassign [split $fns $s] cmd]
+    # Trim off whitespace so that the input can be more free form.
+    set cmd [string trim $cmd]
+    # Iterate over the remaining elements in the pipeline
+    foreach elem $pipeline {
+        set elem [string trim $elem]
+        # If there is no placeholder character in the command, then the
+        # pipeline result is just placed as the last argument. Otherwise, the
+        # accumulated pipeline is substituted for the placeholder.  N.B. the
+        # use of "string map" implies that _all_ the placeholders will be
+        # replaced.
+        set cmd [expr {[string first $p $elem] == -1 ?\
+            "$elem \[$cmd\]" : [string map [list $p "\[$cmd\]"] $elem]}]
+    }
+    # perform the command or save it into a variable
+    if {$var eq {}} {
+        return [uplevel 1 $cmd]
+    } else {
+        upvar 1 $var v
+        set v $cmd
+    }
+}
+
+
+proc  print { args } { puts [join $args " "] }
+proc eprint { args } { puts stderr $args }
+
+
+namespace eval table {
+    namespace export header body row col nth todict tolist colnum setcell getcell justify rows cols
+    namespace ensemble create
+
+    proc header { tbl } {
+        lindex $tbl 0
+    }
+    proc body { tbl } {
+        lrange $tbl 1 end
+    }
+    proc row { tbl args } {
+        set header [header $tbl]
+        foreach vname [lrange $args 0 end-1] {
+            lassign $vname v _v
+            if { $_v eq "" } { set _v $v }
+            upvar 1 $v $_v
+        }
+        set expr [lindex $args end]
+        set bdy [map row [body $tbl] [% {
+            lassign %row {*}%header
+            if { !($expr) } { continue };  set row 
+        }]]
+        list $header {*}$bdy
+    }
+    proc col { tbl args } {
+        set header [header $tbl]
+        set indicies [map i $args { lsearch $header $i }]
+        set hdr [lselect [tbl header] $indicies]
+        set bdy [map row [body $tbl] { lselect $row $indicies }]
+        list $hdr {*}$bdy
+    }
+    proc cols { tbl } { llength [lindex $tbl 0] }
+    proc rows { tbl } { llength $tbl }
+
+    proc colnum { tbl colname } {
+        set header [header $tbl]
+        lsearch $header $colname
+    }
+    proc nth { tbl row } {
+        return [list [lindex $tbl 0] [lindex $tbl $row+1]]
+    }
+    proc todict { tbl } {
+        if { [llength $tbl] != 2 } {
+            error "a table of more than one row cannot convert ta a dict"
+        }
+        return [zip [lindex $tbl 0] [lindex $tbl 1]]
+    }
+    proc tolist { tbl } {
+        if { [llength $tbl] != 2 } {
+            error "a table of more than one row cannot convert ta a list"
+        }
+        return [lindex $tbl 1]
+    }
+    proc cell { tbl row col } {
+        return [lindex [lindex $tbl $row+1] $col]
+    }
+    proc getcell { tbl row col } {
+        lindex $tbl $row+1 $col
+    }
+    proc setcell { tbl row col value } {
+        uplevel 1 "lset $tbl $row+1 $col [list $value]"
+    }
+
+    proc justify { tbl } {
+
+        foreach i [iota [table cols $tbl]-1] { set $i 0 }
+        foreach row $tbl {
+            foreach i [iota [llength $row]-1] col $row {
+                set $i [expr { max([set $i], [string length $col]) }]
+            }
+        }
+        set format [join [map i [iota [table cols $tbl]-1] { I "%[set $i]s" }] " "]
+        
+        join [map row $tbl { format $format {*}$row }] \n
+    }
+}
+
+
+
+proc with { variable = resource { free {} } { block {} } } {
+    uplevel [list set $variable $resource]
+
+    if { $block eq {} } {
+        set block $free
+        set free "chan close \$$variable"
+    }
+    try {
+        uplevel $block
+    } finally {
+        uplevel $free
+    }
+}
+
+
+proc % { body } {
+    string map { % $ } [uplevel subst -nocommands [list $body]] 
+}
+
+namespace eval ::elf {
+    namespace export elf
+    namespace ensemble create
+
+    variable version 1.0.1
+
+    enum create EI_CLASS  { 1 ELFCLASS32     2 ELFCLASS64    } 
+    enum create EI_DATA   { 1 ELFDATA2LSB    2 ELFDATA2MSB   } 
+    enum create E_VERSION { 1 EV_CURRENT } 
+    enum create E_TYPE    { 0 ET_NONE    1 ET_REL        2 ET_EXEC       3 ET_DYN     4 ET_CORE }
+    enum create SH_TYPE   { 0 SHT_NULL   1 SHT_PROGBITS  2 SHT_SYMTAB    3 SHT_STRTAB    
+                   4 SHT_RELA   5 SHT_HASH      6 SHT_DYNAMIC   7 SHT_NOTE      
+                   8 SHT_NOBITS 9 SHT_REL      10 SHT_SHLIB    11 SHT_DYNSYM
+    } 
+    enum create PR_TYPE   { 0 PT_NULL    1 PT_LOAD   2 PT_DYNAMIC    3 PT_INTERP
+                            4 PT_NOTE    5 PT_SHLIB  6 PT_PHDR
+    }
+    enum create SH_INDEX  { 0 SHN_UNDEF  0xfff1 SHN_ABS 0xfff2 SHN_COMMON }
+    enum create ST_BIND   { 0 STB_LOCAL  1 STB_GLOBAL    2 STB_WEAK 10 STB_LOOS 12 STB_HIOS 13 STB_LOPROC 15 STB_HIPROC } 
+    enum create ST_TYPE   { 0 STT_NOTYPE 1 STT_OBJECT    2 STT_FUNC  3 STT_SECTION   4 STT_FILE }
+
+    enum create CPU_TYPE [concat {*}[map { v s } {  
+                             0x00 None        0x01 WE32100     0x02 SPARC       0x03 x86
+                             0x04 M68k        0x05 M88k        0x06 IMCU        0x07 IA-80860
+                             0x08 MIPS        0x09 IBM370      0x0A RS3000      0x0E PA-RISC
+                             0x13 IA-80960    0x14 PowerPC     0x15 PowerPC64   0x16 S390
+                             0x28 ARM7        0x2A SuperH      0x32 IA-64       0x3E amd64
+                             0x8C TMS320C6000 0xB7 ARM8        0xF3 RISC-V      0xF7 BPF
+                            0x101 WDC65C816
+    } { concat [expr { $v }] $s }]]
+    
+    set v_ident { elfmag0 elfmagName ei_class ei_data ei_version ei_osabi ei_abiversion ei_pad }
+    set v_hdr   { e_type e_machine e_version e_entry e_phoff e_shoff e_flags e_ehsize e_phentsize e_phnum e_shentsize e_shnum e_shstrndx }
+    set v_sec   { sh_name sh_type sh_flags sh_addr sh_offset sh_size sh_link sh_info sh_addralign sh_entsize }
+    set v_prg   { p_type p_offset p_vaddr p_paddr p_filesz p_memsz p_flags p_align }
+    set v_sym32 { st_name st_value st_size st_info st_other st_shndx }
+    set v_sym64 { st_name st_info st_other st_shndx st_value st_size }
+
+    set formats [% {
+                             --ident   { size 16   names {$v_ident} scan {cu a3 cu cu cu cu cu cu7} }
+        ELFCLASS32-ELFDATA2LSB-header  { size 36   names {$v_hdr}   scan {su su iu iu iu iu iu su su su su su su} }
+        ELFCLASS32-ELFDATA2MSB-header  { size 36   names {$v_hdr}   scan {Su Su Iu Iu Iu Iu Iu Su Su Su Su Su Su} }
+        ELFCLASS64-ELFDATA2LSB-header  { size 48   names {$v_hdr}   scan {su su iu wu wu wu iu su su su su su su} } 
+        ELFCLASS64-ELFDATA2MSB-header  { size 48   names {$v_hdr}   scan {Su Su Iu Wu Wu Wu Iu Su Su Su Su Su Su} }
+        ELFCLASS32-ELFDATA2LSB-section { size 40   names {$v_sec}   scan {iu iu iu iu iu iu iu iu iu iu} }
+        ELFCLASS32-ELFDATA2MSB-section { size 40   names {$v_sec}   scan {Iu Iu Iu Iu Iu Iu Iu Iu Iu Iu} }
+        ELFCLASS64-ELFDATA2LSB-section { size 64   names {$v_sec}   scan {iu iu wu wu wu wu iu iu wu wu} }
+        ELFCLASS64-ELFDATA2MSB-section { size 64   names {$v_sec}   scan {Iu Iu Wu Wu Wu Wu Iu Iu Wu Wu} }
+        ELFCLASS32-ELFDATA2LSB-program { size 32   names {$v_prg}   scan {iu iu iu iu iu iu iu iu} }
+        ELFCLASS32-ELFDATA2MSB-program { size 32   names {$v_prg}   scan {Iu Iu Iu Iu Iu Iu Iu Iu} }
+        ELFCLASS64-ELFDATA2LSB-program { size 56   names {$v_prg}   scan {iu iu wu wu wu wu wu wu} }
+        ELFCLASS64-ELFDATA2MSB-program { size 56   names {$v_prg}   scan {Iu Iu Wu Wu Wu Wu Wu Wu} }
+        ELFCLASS32-ELFDATA2LSB-symbol  { size 16   names {$v_sym32} scan {iu iu iu cu cu su} }
+        ELFCLASS32-ELFDATA2MSB-symbol  { size 16   names {$v_sym32} scan {Iu Iu Iu cu cu Su} }
+        ELFCLASS64-ELFDATA2LSB-symbol  { size 24   names {$v_sym64} scan {iu cu cu su wu wu} }
+        ELFCLASS64-ELFDATA2MSB-symbol  { size 24   names {$v_sym64} scan {Iu cu cu Su Wu Wu} }
+    }]
+}
+
+::oo::class create ::elf::elf {
+
+    constructor { { file {} } } {
+        my variable elfdata position
+        my variable v_sec v_prg v_sym32
+        my variable sections ;  set sections [list [list sh_index {*}$::elf::v_sec]]
+        my variable programs ;  set programs [list [list  p_index {*}$::elf::v_prg]]
+        my variable symbols  ;  set symbols  [list [list st_index {*}$::elf::v_sym32 st_shnm st_bind st_type]]
+        my variable my_class ;  set my_class ""
+        my variable my_data  ;  set my_data  ""
+
+        if { $file ne {} } {
+            my readFile $file
+        }
+    }
+    method sections {} { my variable sections ;  set sections }
+    method programs {} { my variable programs ;  set programs }
+    method symbols  {} { my variable symbols  ;  set symbols  }
+    method header   {} { my variable elfheader;  set elfheader}
+
+    method readFile {fname} {
+        with file = [::open $fname rb] {
+            return [my readChan $file]
+        }
+    }
+    method readChan {chan} {
+        return [my decodeData [chan read $chan]]
+    }
+    method decodeData {data} {
+        variable elfdata  $data
+        variable position 0
+        variable elfheader [my readElfHeader]
+        dict with elfheader {
+            my readSectionHeaders $e_shoff $e_shnum $e_shstrndx
+            my readProgramHeaders $e_phoff $e_phnum 
+            my readSymbolTable
+        }
+        return $elfheader
+    }
+
+    method getHeader { item type expr } {
+        variable $type
+        pipe {
+            set $type |
+            table row ~ item $expr |
+            table todict ~
+        }
+    }
+    method getSectionHeaderByName  { item } { my getHeader $item sections { $sh_name  eq $item } }
+    method getSectionHeaderByIndex { item } { my getHeader $item sections { $sh_index == $item } }
+    method getProgramHeaderByIndex { item } { my getHeader $item programs {  $p_index == $item } }
+    method getSymbolByName         { item } { my getHeader $item symbols  { $st_name  eq $item } }
+    method getSymbolByIndex        { item } { my getHeader $item symbols  { $st_index == $item } }
+
+    method getSectionData { header offsetName sizeName } {
+        dict update header $offsetName offset $sizeName size
+        my Read $offset $size
+    }
+    method getSectionDataByIndex { index } { my getSectionData [my getSectionHeaderByIndex $index] sh_offset sh_size   }
+    method getProgramDataByIndex { index } { my getSectionData [my getSectionHeaderByIndex $index]  p_offset  p_filesz }
+    method getSectionDataByName  { name  } { my getSectionData [my getSectionHeaderByName $name]   sh_offset sh_size   }
+
+    method readElfHeader {} {
+        set ident [my scanData ident]                       ; # Read the 16 byte identifier field check  for an ELF file. 
+    
+        dict import ident elfmag0 elfmagName ei_class ei_data
+        if {$elfmag0 != 0x7f || $elfmagName ne "ELF"} {
+            error "bad ELF magic number, [format %#x $elfmag0] $elfmagName"
+        }
+
+        dict update ident ei_class ei_class ei_data ei_data {
+            set ei_class [::elf::EI_CLASS toSym $ei_class]
+            set ei_data  [::elf::EI_DATA  toSym $ei_data]
+        }
+
+        my variable my_class my_data
+        set my_class $ei_class
+        set my_data  $ei_data
+    
+        set other [my scanData header]                       ; # Convert the remainder of the header.
+        dict update other e_type e_type e_version e_version {
+            set e_type    [::elf::E_TYPE    toSym $e_type]
+            set e_version [::elf::E_VERSION toSym $e_version]
+        }
+    
+        dict merge $ident $other
+    }
+
+    method readStringsFromSection { header } {
+        dict import header sh_type sh_offset sh_size
+
+        if { $sh_type ne "SHT_STRTAB" } {
+            error "expected symbol table section type of SHT_STRTAB, got $sh_type"
+        }
+        my readStrings $sh_offset $sh_size
+    }
+    method readSectionNames { sh_index } { my readStringsFromSection [my getSectionHeaderByIndex $sh_index] }
+    method readStringTable  {}           { my readStringsFromSection [my getSectionHeaderByName .strtab] }
+
+    method readHeaders { type format offset n indexName update } {
+        variable $type
+        my seekData $offset                                     ; # Seek to where the section header table is located.
+
+        upvar $format header
+        for {set i 0} {$i < $n} {incr i} {                      ; # Read and convert the entire array of section headers.
+            set header [my scanData $format]
+            uplevel $update
+    
+            lappend $type [dict values [dict merge [list $indexName $i] $header]]
+        }
+    }
+    method readSectionHeaders { e_shoff e_shnum e_shstrndx } {
+        variable sections
+        my readHeaders sections section $e_shoff $e_shnum sh_index {
+            dict update section sh_type sh_type {
+                set sh_type [::elf::SH_TYPE toSym $sh_type]
+            }
+        }
+
+        set shstrings [my readSectionNames $e_shstrndx]
+        set sh_name [table colnum $sections sh_name]
+        for {set secNo 0} {$secNo < $e_shnum} {incr secNo} {    ; # Set the section string names
+            set offset [table get $sections $secNo $sh_name]
+            table set sections $secNo $sh_name [my getString $shstrings $offset]
+        }
+    }
+    method readProgramHeaders {e_phoff e_phnum } {
+        my readHeaders programs program $e_phoff $e_phnum p_index {
+            dict update program p_type p_type p_flags p_flags {
+                set p_type  [::elf::PR_TYPE  toSym $p_type]
+                #set p_flags [::elf::P_FLAGS toSym $p_flags]
+            }
+        }
+    }
+    method readSymbolTable {} {
+        my variable sections symbols 
+        set strings   [my readStringTable]
+        set symheader [my getSectionHeaderByName .symtab]
+
+        dict import symheader sh_type sh_offset sh_size sh_entsize
+        if {$sh_type ne "SHT_SYMTAB"} {
+            error "expected symbol table section type of SHT_SYMTAB, got $sh_type"
+        }
+        my seekData $sh_offset
+        set nSyms [expr {$sh_size / $sh_entsize}]
+
+        my readHeaders symbols symbol $sh_offset $nSyms st_index {
+            dict import symbol st_name st_info st_shndx
+            if { $st_shndx == 0 } {
+                continue
+            }
+            dict set symbol st_name [my getString $strings $st_name]
+            dict set symbol st_shnm [table get $sections $st_shndx 1]
+            dict set symbol st_bind [::elf::ST_BIND toSym [expr { $st_info >>   4 }]]
+            dict set symbol st_type [::elf::ST_TYPE toSym [expr { $st_info &  0xf }]]
+        }
+    }
+
+    method readStrings { sh_offset sh_size } {
+        set data [my readData $sh_offset $sh_size]
+        set strOff 0
+        set strings { 0 {} }
+        foreach s [split $data "\0"] {           ; # The strings are just packed NUL terminated ASCII strings.
+                                                 ; # Just split on the NUL character to unbundle the them.
+            if {[string length $s] != 0} {
+                dict set strings $strOff $s
+            }
+            incr strOff [expr {[string length $s] + 1}]
+        }
+    
+        return $strings
+    }
+    method getString { strings offset } {
+        catch { return [dict get $strings $offset] } 
+
+        # Not all the requested indicies are at the start of a string table entry.
+        #
+        foreach {pos value} $strings {
+            if { $pos > $offset } { break }
+            set string $value
+            set index  $pos
+        }
+
+        string range $string [expr { $offset - $index }] end
+    }
+    method seekData { here } {
+        my variable elfdata position
+        set position [expr { min(max($here, 0), [string length $elfdata]) }]
+    }
+    method readData {offset count} {
+        my variable elfdata position
+    
+        my seekData $offset
+        set end [expr {$position + $count - 1}]
+        if {$end >= [string length $elfdata]} {
+            error "attempt to read beyond end of ELF data"
+        }
+        set data [string range $elfdata $position $end]
+        set position [expr {$end + 1}]
+        return $data
+    }
+    method getScan { fmt } {
+        my variable my_class my_data
+        dict values [dict get $::elf::formats $my_class-$my_data-$fmt]
+    }
+    method scanData { fmt } {
+        my variable elfdata position
+
+        lassign [my getScan $fmt] size names scan
+
+        set cvtd [binary scan $elfdata "@$position $scan" {*}$names]
+        if {$cvtd != [llength $names]} {
+            error "expected to scanData [llength $names] values, actually converted $cvtd"
+        }
+        set position [expr { min(max($position + $size, 0), [string length $elfdata]) }]
+
+        return [zip $names [map name $names { set $name }]]
+    }
+
+    set et_range { ET_LOOS { 0xfe00 0xfeff } ET_LOPROC { 0xff00 0xffff } }
+    set sh_range { SHT_LOOS { 0x60000000 0x6fffffff } SHT_LOPROC { 0x70000000 0x7fffffff } }
+                
+    set si_range { SHN_LOPROC { 0xff00 0xff1f } SHT_LOOS { 0xff20 0xff3f } }
+    set pr_range { PT_LOOS { 0x60000000 0x6fffffff } PT_LOPROC { 0x70000000 0x7fffffff } }
+    set sb_range { STB_LOOS { 10 12 } STB_LOPROC { 13 15 } }
+    set st_range { STB_LOOS { 10 12 } STB_LOPROC { 13 15 } }
+
+    set sh_flags { SHF_WRITE    1  SHF_ALLOC 2     SHF_EXECINST 4 SHF_MASKPROC 28:4     }
+    set p_flags  { PF_X 1   PF_W 2  PF_R 4         PF_MASKOS 12:8 PF_MASKPROC  28:4     }
+}
+
+package provide elf $::elf::version
+
+
+
+set e [elf::elf create e [lindex $argv 0]]
+
+print $argv
+print [join [$e header] \n]
+print
+print [table justify [$e sections]]
+print
+print [table justify [$e programs]]
+print
+print [table justify [$e symbols]]
+
