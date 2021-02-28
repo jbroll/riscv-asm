@@ -61,10 +61,10 @@ namespace eval ::elf {
         ELFCLASS32-ELFDATA2MSB-section { size 40   names {$v_sec}   scan {Iu Iu Iu Iu Iu Iu Iu Iu Iu Iu} }
         ELFCLASS64-ELFDATA2LSB-section { size 64   names {$v_sec}   scan {iu iu wu wu wu wu iu iu wu wu} }
         ELFCLASS64-ELFDATA2MSB-section { size 64   names {$v_sec}   scan {Iu Iu Wu Wu Wu Wu Iu Iu Wu Wu} }
-        ELFCLASS32-ELFDATA2LSB-program { size 32   names {$v_prg}   scan {iu iu iu iu iu iu iu iu} }
-        ELFCLASS32-ELFDATA2MSB-program { size 32   names {$v_prg}   scan {Iu Iu Iu Iu Iu Iu Iu Iu} }
-        ELFCLASS64-ELFDATA2LSB-program { size 56   names {$v_prg}   scan {iu iu wu wu wu wu wu wu} }
-        ELFCLASS64-ELFDATA2MSB-program { size 56   names {$v_prg}   scan {Iu Iu Wu Wu Wu Wu Wu Wu} }
+        ELFCLASS32-ELFDATA2LSB-segment { size 32   names {$v_prg}   scan {iu iu iu iu iu iu iu iu} }
+        ELFCLASS32-ELFDATA2MSB-segment { size 32   names {$v_prg}   scan {Iu Iu Iu Iu Iu Iu Iu Iu} }
+        ELFCLASS64-ELFDATA2LSB-segment { size 56   names {$v_prg}   scan {iu iu wu wu wu wu wu wu} }
+        ELFCLASS64-ELFDATA2MSB-segment { size 56   names {$v_prg}   scan {Iu Iu Wu Wu Wu Wu Wu Wu} }
         ELFCLASS32-ELFDATA2LSB-symbol  { size 16   names {$v_sym32} scan {iu iu iu cu cu su} }
         ELFCLASS32-ELFDATA2MSB-symbol  { size 16   names {$v_sym32} scan {Iu Iu Iu cu cu Su} }
         ELFCLASS64-ELFDATA2LSB-symbol  { size 24   names {$v_sym64} scan {iu cu cu su wu wu} }
@@ -77,18 +77,19 @@ namespace eval ::elf {
     constructor { { file {} } } {
         my variable elfdata position
         my variable v_sec v_prg v_sym32
-        my variable sections ;  set sections [list [list sh_index {*}$::elf::v_sec]]
-        my variable programs ;  set programs [list [list  p_index {*}$::elf::v_prg]]
-        my variable symbols  ;  set symbols  [list [list st_index {*}$::elf::v_sym32 st_shnm st_bind st_type]]
         my variable my_class ;  set my_class ""
         my variable my_data  ;  set my_data  ""
+
+        my variable sections ;  set sections [list [list sh_index {*}$::elf::v_sec]]
+        my variable segments ;  set segments [list [list  p_index {*}$::elf::v_prg]]
+        my variable symbols  ;  set symbols  [list [list st_index {*}$::elf::v_sym32 st_shnm st_bind st_type]]
 
         if { $file ne {} } {
             my readFile $file
         }
     }
     method sections {} { my variable sections ;  set sections }
-    method programs {} { my variable programs ;  set programs }
+    method segments {} { my variable segments ;  set segments }
     method symbols  {} { my variable symbols  ;  set symbols  }
     method header   {} { my variable elfheader;  set elfheader}
 
@@ -106,7 +107,7 @@ namespace eval ::elf {
         variable elfheader [my readElfHeader]
         dict with elfheader {
             my readSectionHeaders $e_shoff $e_shnum $e_shstrndx
-            my readProgramHeaders $e_phoff $e_phnum 
+            my readSegmentHeaders $e_phoff $e_phnum 
             my readSymbolTable
         }
         return $elfheader
@@ -122,7 +123,7 @@ namespace eval ::elf {
     }
     method getSectionHeaderByName  { item } { my getHeader $item sections { $sh_name  eq $item } }
     method getSectionHeaderByIndex { item } { my getHeader $item sections { $sh_index == $item } }
-    method getProgramHeaderByIndex { item } { my getHeader $item programs {  $p_index == $item } }
+    method getSegmentHeaderByIndex { item } { my getHeader $item segments {  $p_index == $item } }
     method getSymbolByName         { item } { my getHeader $item symbols  { $st_name  eq $item } }
     method getSymbolByIndex        { item } { my getHeader $item symbols  { $st_index == $item } }
 
@@ -131,7 +132,7 @@ namespace eval ::elf {
         my Read $offset $size
     }
     method getSectionDataByIndex { index } { my getSectionData [my getSectionHeaderByIndex $index] sh_offset sh_size   }
-    method getProgramDataByIndex { index } { my getSectionData [my getSectionHeaderByIndex $index]  p_offset  p_filesz }
+    method getSegmentDataByIndex { index } { my getSectionData [my getSectionHeaderByIndex $index]  p_offset  p_filesz }
     method getSectionDataByName  { name  } { my getSectionData [my getSectionHeaderByName $name]   sh_offset sh_size   }
 
     method readElfHeader {} {
@@ -152,7 +153,8 @@ namespace eval ::elf {
         set my_data  $ei_data
     
         set other [my scanData header]                       ; # Convert the remainder of the header.
-        dict update other e_type e_type e_version e_version {
+        dict update other e_type e_type e_version e_version e_machine e_machine {
+            set e_machine [::elf::CPU_TYPE  toSym $e_machine]
             set e_type    [::elf::E_TYPE    toSym $e_type]
             set e_version [::elf::E_VERSION toSym $e_version]
         }
@@ -198,9 +200,9 @@ namespace eval ::elf {
             table set sections $secNo $sh_name [my getString $shstrings $offset]
         }
     }
-    method readProgramHeaders {e_phoff e_phnum } {
-        my readHeaders programs program $e_phoff $e_phnum p_index {
-            dict update program p_type p_type p_flags p_flags {
+    method readSegmentHeaders {e_phoff e_phnum } {
+        my readHeaders segments segment $e_phoff $e_phnum p_index {
+            dict update segment p_type p_type p_flags p_flags {
                 set p_type  [::elf::PR_TYPE  toSym $p_type]
                 #set p_flags [::elf::P_FLAGS toSym $p_flags]
             }

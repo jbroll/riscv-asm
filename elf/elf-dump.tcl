@@ -8,6 +8,7 @@ set header [e header]
 dict with header {
     print [subst {
     $argv : $ei_class $ei_data v$ei_version type $e_type
+        $e_machine
         Entry: [format %8X $e_entry]
         phoff [format %8X $e_phoff] phentsize [format %4d $e_phentsize] phnum [format %4d $e_phnum] ehsize  $e_ehsize flags $e_flags
         shoff [format %8X $e_shoff] shentsize [format %4d $e_shentsize] shnum [format %4d $e_shnum] strindx $e_shstrndx
@@ -16,6 +17,6 @@ dict with header {
 print
 print [table justify [$e sections]]
 print
-print [table justify [$e programs]]
+print [table justify [$e segments]]
 print
 print [table justify [$e symbols]]
