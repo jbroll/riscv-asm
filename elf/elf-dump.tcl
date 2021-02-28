@@ -9,6 +9,6 @@ print [join [$e header] \n]
 print
 print [table justify [$e sections]]
 print
-print [table justify [$e segments]]
+print [table justify [$e programs]]
 print
 print [table justify [$e symbols]]
