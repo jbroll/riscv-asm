@@ -75,6 +75,7 @@ namespace eval ::elf {
 ::oo::class create ::elf::elf {
 
     constructor { { file {} } } {
+        namespace eval [self namespace] { namespace path [list ::elf [namespace path]] }
         my variable elfdata position
         my variable v_sec v_prg v_sym32
         my variable my_class ;  set my_class ""
@@ -145,8 +146,8 @@ namespace eval ::elf {
         }
 
         dict update ident ei_class ei_class ei_data ei_data {
-            set ei_class [::elf::EI_CLASS toSym $ei_class]
-            set ei_data  [::elf::EI_DATA  toSym $ei_data]
+            set ei_class [EI_CLASS toSym $ei_class]
+            set ei_data  [EI_DATA  toSym $ei_data]
         }
 
         my variable my_class my_data
@@ -155,9 +156,9 @@ namespace eval ::elf {
     
         set other [my scanData header]                       ; # Convert the remainder of the header.
         dict update other e_type e_type e_version e_version e_machine e_machine {
-            set e_machine [::elf::CPU_TYPE  toSym $e_machine]
-            set e_type    [::elf::E_TYPE    toSym $e_type]
-            set e_version [::elf::E_VERSION toSym $e_version]
+            set e_machine [CPU_TYPE  toSym $e_machine]
+            set e_type    [E_TYPE    toSym $e_type]
+            set e_version [E_VERSION toSym $e_version]
         }
     
         dict merge $ident $other
@@ -190,7 +191,7 @@ namespace eval ::elf {
         my variable S
         my readHeaders sections section $e_shoff $e_shnum sh_index {
             dict update section sh_type sh_type {
-                set sh_type [::elf::SH_TYPE toSym $sh_type]
+                set sh_type [SH_TYPE toSym $sh_type]
             }
         }
 
@@ -204,8 +205,8 @@ namespace eval ::elf {
     method readSegmentHeaders {e_phoff e_phnum } {
         my readHeaders segments segment $e_phoff $e_phnum p_index {
             dict update segment p_type p_type p_flags p_flags {
-                set p_type  [::elf::PR_TYPE  toSym $p_type]
-                #set p_flags [::elf::P_FLAGS toSym $p_flags]
+                set p_type   [PR_TYPE  toSym $p_type]
+                #set p_flags [P_FLAGS toSym $p_flags]
             }
         }
     }
@@ -227,7 +228,7 @@ namespace eval ::elf {
                 continue
             }
             dict set symbol st_name [my getString $strings $st_name]
-            dict set symbol st_type [::elf::ST_TYPE toSym [expr { $st_info &  0xf }]]
+            dict set symbol st_type [ST_TYPE toSym [expr { $st_info &  0xf }]]
         }
     }
 
