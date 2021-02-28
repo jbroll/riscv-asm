@@ -80,18 +80,19 @@ namespace eval ::elf {
         my variable my_class ;  set my_class ""
         my variable my_data  ;  set my_data  ""
 
-        my variable sections ;  set sections [list [list sh_index {*}$::elf::v_sec]]
-        my variable segments ;  set segments [list [list  p_index {*}$::elf::v_prg]]
-        my variable symbols  ;  set symbols  [list [list st_index {*}$::elf::v_sym32 st_shnm st_bind st_type]]
+        my variable S
+        set S(sections) [list [list sh_index {*}$::elf::v_sec]]
+        set S(segments) [list [list  p_index {*}$::elf::v_prg]]
+        set S(symbols)  [list [list st_index {*}$::elf::v_sym32 st_shnm st_bind st_type]]
 
         if { $file ne {} } {
             my readFile $file
         }
     }
-    method sections {} { my variable sections ;  set sections }
-    method segments {} { my variable segments ;  set segments }
-    method symbols  {} { my variable symbols  ;  set symbols  }
     method header   {} { my variable elfheader;  set elfheader}
+    method sections {} { my variable S ;  set S(sections) }
+    method segments {} { my variable S ;  set S(segments) }
+    method symbols  {} { my variable S ;  set S(symbols)  }
 
     method readFile {fname} {
         with file = [::open $fname rb] {
@@ -114,9 +115,9 @@ namespace eval ::elf {
     }
 
     method getHeader { item type expr } {
-        variable $type
+        variable S
         pipe {
-            set $type |
+            set S($type) |
             table row ~ item $expr |
             table todict ~
         }
@@ -174,7 +175,7 @@ namespace eval ::elf {
     method readStringTable  {}           { my readStringsFromSection [my getSectionHeaderByName .strtab] }
 
     method readHeaders { type format offset n indexName update } {
-        variable $type
+        variable S
         my seekData $offset                                     ; # Seek to where the section header table is located.
 
         upvar $format header
@@ -182,11 +183,11 @@ namespace eval ::elf {
             set header [my scanData $format]
             uplevel $update
     
-            lappend $type [dict values [dict merge [list $indexName $i] $header]]
+            lappend S($type) [dict values [dict merge [list $indexName $i] $header]]
         }
     }
     method readSectionHeaders { e_shoff e_shnum e_shstrndx } {
-        variable sections
+        my variable S
         my readHeaders sections section $e_shoff $e_shnum sh_index {
             dict update section sh_type sh_type {
                 set sh_type [::elf::SH_TYPE toSym $sh_type]
@@ -194,10 +195,10 @@ namespace eval ::elf {
         }
 
         set shstrings [my readSectionNames $e_shstrndx]
-        set sh_name [table colnum $sections sh_name]
+        set sh_name [table colnum $S(sections) sh_name]
         for {set secNo 0} {$secNo < $e_shnum} {incr secNo} {    ; # Set the section string names
-            set offset [table get $sections $secNo $sh_name]
-            table set sections $secNo $sh_name [my getString $shstrings $offset]
+            set offset [table get $S(sections) $secNo $sh_name]
+            table set S(sections) $secNo $sh_name [my getString $shstrings $offset]
         }
     }
     method readSegmentHeaders {e_phoff e_phnum } {
@@ -209,7 +210,7 @@ namespace eval ::elf {
         }
     }
     method readSymbolTable {} {
-        my variable sections symbols 
+        my variable S
         set strings   [my readStringTable]
         set symheader [my getSectionHeaderByName .symtab]
 
@@ -226,8 +227,6 @@ namespace eval ::elf {
                 continue
             }
             dict set symbol st_name [my getString $strings $st_name]
-            dict set symbol st_shnm [table get $sections $st_shndx 1]
-            dict set symbol st_bind [::elf::ST_BIND toSym [expr { $st_info >>   4 }]]
             dict set symbol st_type [::elf::ST_TYPE toSym [expr { $st_info &  0xf }]]
         }
     }
