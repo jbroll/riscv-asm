@@ -1,0 +1,121 @@
+
+    test/hello-i586 : ELFCLASS32 ELFDATA2LSB v1 type ET_DYN
+        x86
+        Entry: 0x00001068
+        phoff: 0x00000034 phentsize:   32 phnum:   10  ehsize: 52 flags: 0
+        shoff: 0x00004244 shentsize:   40 shnum:   33 strindx: 32
+    
+
+sh_index        sh_name      sh_type sh_flags sh_addr sh_offset sh_size sh_link sh_info sh_addralign sh_entsize
+       0                    SHT_NULL        0       0         0       0       0       0            0          0
+       1        .interp SHT_PROGBITS        2     372       372      23       0       0            1          0
+       2      .gnu.hash   1879048182        2     396       396      36       3       0            4          4
+       3        .dynsym   SHT_DYNSYM        2     432       432     160       4       1            4         16
+       4        .dynstr   SHT_STRTAB        2     592       592     182       0       0            1          0
+       5       .rel.dyn      SHT_REL        2     776       776      72       3       0            4          8
+       6       .rel.plt      SHT_REL       66     848       848      16       3      18            4          8
+       7          .init SHT_PROGBITS        6    4096      4096      17       0       0            1          0
+       8           .plt SHT_PROGBITS        6    4128      4128      48       0       0           16          4
+       9       .plt.got SHT_PROGBITS        6    4176      4176      24       0       0            8          8
+      10          .text SHT_PROGBITS        6    4200      4200     528       0       0            1          0
+      11          .fini SHT_PROGBITS        6    4728      4728      12       0       0            1          0
+      12        .rodata SHT_PROGBITS        2    8192      8192      12       0       0            1          0
+      13  .eh_frame_hdr SHT_PROGBITS        2    8204      8204      36       0       0            4          0
+      14      .eh_frame SHT_PROGBITS        2    8240      8240     136       0       0            4          0
+      15         .ctors SHT_PROGBITS        3   16124     12028       8       0       0            4          0
+      16         .dtors SHT_PROGBITS        3   16132     12036       8       0       0            4          0
+      17       .dynamic  SHT_DYNAMIC        3   16140     12044     192       4       0            4          8
+      18           .got SHT_PROGBITS        3   16332     12236      52       0       0            4          4
+      19          .data SHT_PROGBITS        3   16384     12288       4       0       0            4          0
+      20           .bss   SHT_NOBITS        3   16388     12292      32       0       0            4          0
+      21       .comment SHT_PROGBITS       48       0     12292      26       0       0            1          1
+      22 .debug_aranges SHT_PROGBITS        0       0     12320     112       0       0            8          0
+      23    .debug_info SHT_PROGBITS        0       0     12432     816       0       0            1          0
+      24  .debug_abbrev SHT_PROGBITS        0       0     13248     335       0       0            1          0
+      25    .debug_line SHT_PROGBITS        0       0     13583     356       0       0            1          0
+      26   .debug_frame SHT_PROGBITS        0       0     13940      88       0       0            4          0
+      27     .debug_str SHT_PROGBITS       48       0     14028     771       0       0            1          1
+      28     .debug_loc SHT_PROGBITS        0       0     14799      76       0       0            1          0
+      29  .debug_ranges SHT_PROGBITS        0       0     14880      80       0       0            8          0
+      30        .symtab   SHT_SYMTAB        0       0     14960    1152      31      51            4         16
+      31        .strtab   SHT_STRTAB        0       0     16112     569       0       0            1          0
+      32      .shstrtab   SHT_STRTAB        0       0     16681     283       0       0            1          0
+
+p_index     p_type p_offset p_vaddr p_paddr p_filesz p_memsz p_flags p_align
+      0    PT_PHDR       52      52      52      320     320       4       4
+      1  PT_INTERP      372     372     372       23      23       4       1
+      2    PT_LOAD        0       0       0      864     864       4    4096
+      3    PT_LOAD     4096    4096    4096      644     644       5    4096
+      4    PT_LOAD     8192    8192    8192      184     184       4    4096
+      5    PT_LOAD    12028   16124   16124      264     296       6    4096
+      6 PT_DYNAMIC    12044   16140   16140      192     192       6       4
+      7 1685382480     8204    8204    8204       36      36       4       4
+      8 1685382481        0       0       0        0       0       6      16
+      9 1685382482    12028   16124   16124      260     260       4       1
+
+st_index               st_name   st_value    st_size st_info st_other st_shndx        st_shnm    st_bind     st_type
+       1                              372          0       3        0        1        .interp  STB_LOCAL STT_SECTION
+       2                              396          0       3        0        2      .gnu.hash  STB_LOCAL STT_SECTION
+       3                              432          0       3        0        3        .dynsym  STB_LOCAL STT_SECTION
+       4                              592          0       3        0        4        .dynstr  STB_LOCAL STT_SECTION
+       5                              776          0       3        0        5       .rel.dyn  STB_LOCAL STT_SECTION
+       6                              848          0       3        0        6       .rel.plt  STB_LOCAL STT_SECTION
+       7                             4096          0       3        0        7          .init  STB_LOCAL STT_SECTION
+       8                             4128          0       3        0        8           .plt  STB_LOCAL STT_SECTION
+       9                             4176          0       3        0        9       .plt.got  STB_LOCAL STT_SECTION
+      10                             4200          0       3        0       10          .text  STB_LOCAL STT_SECTION
+      11                             4728          0       3        0       11          .fini  STB_LOCAL STT_SECTION
+      12                             8192          0       3        0       12        .rodata  STB_LOCAL STT_SECTION
+      13                             8204          0       3        0       13  .eh_frame_hdr  STB_LOCAL STT_SECTION
+      14                             8240          0       3        0       14      .eh_frame  STB_LOCAL STT_SECTION
+      15                            16124          0       3        0       15         .ctors  STB_LOCAL STT_SECTION
+      16                            16132          0       3        0       16         .dtors  STB_LOCAL STT_SECTION
+      17                            16140          0       3        0       17       .dynamic  STB_LOCAL STT_SECTION
+      18                            16332          0       3        0       18           .got  STB_LOCAL STT_SECTION
+      19                            16384          0       3        0       19          .data  STB_LOCAL STT_SECTION
+      20                            16388          0       3        0       20           .bss  STB_LOCAL STT_SECTION
+      21                                0          0       3        0       21       .comment  STB_LOCAL STT_SECTION
+      22                                0          0       3        0       22 .debug_aranges  STB_LOCAL STT_SECTION
+      23                                0          0       3        0       23    .debug_info  STB_LOCAL STT_SECTION
+      24                                0          0       3        0       24  .debug_abbrev  STB_LOCAL STT_SECTION
+      25                                0          0       3        0       25    .debug_line  STB_LOCAL STT_SECTION
+      26                                0          0       3        0       26   .debug_frame  STB_LOCAL STT_SECTION
+      27                                0          0       3        0       27     .debug_str  STB_LOCAL STT_SECTION
+      28                                0          0       3        0       28     .debug_loc  STB_LOCAL STT_SECTION
+      29                                0          0       3        0       29  .debug_ranges  STB_LOCAL STT_SECTION
+      30               Scrt1.c          0          0       4        0    65521                 STB_LOCAL    STT_FILE
+      31            crtstuff.c          0          0       4        0    65521                 STB_LOCAL    STT_FILE
+      32         __CTOR_LIST__      16124          0       1        0       15         .ctors  STB_LOCAL  STT_OBJECT
+      33         __DTOR_LIST__      16132          0       1        0       16         .dtors  STB_LOCAL  STT_OBJECT
+      34    __EH_FRAME_BEGIN__       8320          0       1        0       14      .eh_frame  STB_LOCAL  STT_OBJECT
+      35  deregister_tm_clones       4286          0       2        0       10          .text  STB_LOCAL    STT_FUNC
+      36    register_tm_clones       4337          0       2        0       10          .text  STB_LOCAL    STT_FUNC
+      37 __do_global_dtors_aux       4408          0       2        0       10          .text  STB_LOCAL    STT_FUNC
+      38        completed.5807      16388          1       1        0       20           .bss  STB_LOCAL  STT_OBJECT
+      39         dtor_idx.5809      16392          4       1        0       20           .bss  STB_LOCAL  STT_OBJECT
+      40           frame_dummy       4550          0       2        0       10          .text  STB_LOCAL    STT_FUNC
+      41           object.5819      16396         24       1        0       20           .bss  STB_LOCAL  STT_OBJECT
+      42            crtstuff.c          0          0       4        0    65521                 STB_LOCAL    STT_FILE
+      43          __CTOR_END__      16128          0       1        0       15         .ctors  STB_LOCAL  STT_OBJECT
+      44         __FRAME_END__       8372          0       1        0       14      .eh_frame  STB_LOCAL  STT_OBJECT
+      45 __do_global_ctors_aux       4689          0       2        0       10          .text  STB_LOCAL    STT_FUNC
+      46               hello.c          0          0       4        0    65521                 STB_LOCAL    STT_FILE
+      47                                0          0       4        0    65521                 STB_LOCAL    STT_FILE
+      48              _DYNAMIC      16140          0       1        0       17       .dynamic  STB_LOCAL  STT_OBJECT
+      49    __GNU_EH_FRAME_HDR       8204          0       0        0       13  .eh_frame_hdr  STB_LOCAL  STT_NOTYPE
+      50 _GLOBAL_OFFSET_TABLE_      16332          0       1        0       18           .got  STB_LOCAL  STT_OBJECT
+      51 __x86.get_pc_thunk.cx       4625          0      18        2       10          .text STB_GLOBAL    STT_FUNC
+      52           __TMC_END__      16388          0      17        2       19          .data STB_GLOBAL  STT_OBJECT
+      53          __DTOR_END__      16136          0      17        2       16         .dtors STB_GLOBAL  STT_OBJECT
+      56 __x86.get_pc_thunk.ax       4621          0      18        2       10          .text STB_GLOBAL    STT_FUNC
+      57          __dso_handle      16384          0      17        2       19          .data STB_GLOBAL  STT_OBJECT
+      58                 _init       4096          1      18        0        7          .init STB_GLOBAL    STT_FUNC
+      61                _start       4200          0      16        0       10          .text STB_GLOBAL  STT_NOTYPE
+      63              _start_c       4227         55      18        0       10          .text STB_GLOBAL    STT_FUNC
+      64 __x86.get_pc_thunk.bx       4282          0      18        2       10          .text STB_GLOBAL    STT_FUNC
+      66           __bss_start      16388          0      16        0       20           .bss STB_GLOBAL  STT_NOTYPE
+      67                  main       4629         60      18        0       10          .text STB_GLOBAL    STT_FUNC
+      68                 _fini       4728          1      18        0       11          .fini STB_GLOBAL    STT_FUNC
+      69                _edata      16388          0      16        0       19          .data STB_GLOBAL  STT_NOTYPE
+      70                  _end      16420          0      16        0       20           .bss STB_GLOBAL  STT_NOTYPE
+      72                       1663971700 1953653504     115      116    26229                         7 STT_SECTION
