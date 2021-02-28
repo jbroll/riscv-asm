@@ -50,6 +50,18 @@ namespace eval ::elf {
     set v_prg   { p_type p_offset p_vaddr p_paddr p_filesz p_memsz p_flags p_align }
     set v_sym32 { st_name st_value st_size st_info st_other st_shndx }
     set v_sym64 { st_name st_info st_other st_shndx st_value st_size }
+    set v_rel   { r_offset r_info }
+    set v_rela  { r_offset r_info r_addend }
+    set v_note  { n_name n_desc n_type }
+
+    set sectionHeaders [% {
+        section { { sh_index $::elf::v_sec                            } }
+        segment { {  p_index $::elf::v_prg                            } }
+        symtab  { { st_index $::elf::v_sym32 st_shnm st_bind st_type  } }
+        rel     { { r_index  $::elf::v_rel   r_sym r_type             } }
+        rela    { { r_index  $::elf::v_rela  r_sym r_type             } }
+        note    { { n_index  $::elf::v_note                           } }
+    }]
 
     set formats [% {
                              --ident   { size 16   names {$v_ident} scan {cu a3 cu cu cu cu cu cu7} }
@@ -65,14 +77,73 @@ namespace eval ::elf {
         ELFCLASS32-ELFDATA2MSB-segment { size 32   names {$v_prg}   scan {Iu Iu Iu Iu Iu Iu Iu Iu} }
         ELFCLASS64-ELFDATA2LSB-segment { size 56   names {$v_prg}   scan {iu iu wu wu wu wu wu wu} }
         ELFCLASS64-ELFDATA2MSB-segment { size 56   names {$v_prg}   scan {Iu Iu Wu Wu Wu Wu Wu Wu} }
-        ELFCLASS32-ELFDATA2LSB-symbol  { size 16   names {$v_sym32} scan {iu iu iu cu cu su} }
-        ELFCLASS32-ELFDATA2MSB-symbol  { size 16   names {$v_sym32} scan {Iu Iu Iu cu cu Su} }
-        ELFCLASS64-ELFDATA2LSB-symbol  { size 24   names {$v_sym64} scan {iu cu cu su wu wu} }
-        ELFCLASS64-ELFDATA2MSB-symbol  { size 24   names {$v_sym64} scan {Iu cu cu Su Wu Wu} }
+
+        ELFCLASS32-ELFDATA2LSB-symtab  { size 16   names {$v_sym32} scan {iu iu iu cu cu su} }
+        ELFCLASS32-ELFDATA2MSB-symtab  { size 16   names {$v_sym32} scan {Iu Iu Iu cu cu Su} }
+        ELFCLASS64-ELFDATA2LSB-symtab  { size 24   names {$v_sym64} scan {iu cu cu su wu wu} }
+        ELFCLASS64-ELFDATA2MSB-symtab  { size 24   names {$v_sym64} scan {Iu cu cu Su Wu Wu} }
+
+        ELFCLASS32-ELFDATA2LSB-rel     { size  8   names {$v_rel}   scan {iu iu} }
+        ELFCLASS32-ELFDATA2MSB-rel     { size  8   names {$v_rel}   scan {Iu Iu} }
+        ELFCLASS64-ELFDATA2LSB-rel     { size 16   names {$v_rel}   scan {wu wu} }
+        ELFCLASS64-ELFDATA2MSB-rel     { size 16   names {$v_rel}   scan {Wu Wu} }
+        ELFCLASS32-ELFDATA2LSB-rela    { size 12   names {$v_rela}  scan {iu iu iu} }
+        ELFCLASS32-ELFDATA2MSB-rela    { size 12   names {$v_rela}  scan {Iu Iu Iu} }
+        ELFCLASS64-ELFDATA2LSB-rela    { size 24   names {$v_rela}  scan {wu wu wu} }
+        ELFCLASS64-ELFDATA2MSB-rela    { size 24   names {$v_rela}  scan {Wu Wu Wu} }
+
+        ELFCLASS32-ELFDATA2LSB-note    { size 16   names {$v_note}  scan {iu iu iu} }
+        ELFCLASS32-ELFDATA2MSB-note    { size 16   names {$v_note}  scan {Iu Iu Iu} }
+        ELFCLASS64-ELFDATA2LSB-note    { size 24   names {$v_note}  scan {wu wu wu} }
+        ELFCLASS64-ELFDATA2MSB-note    { size 24   names {$v_note}  scan {Wu Wu Wu} }
     }]
+
+    set sectionTypes { symtab rel rela note }
+    set sectionDecode {
+        symtab {
+            dict import symtab st_name st_info st_shndx
+            if { $st_shndx == 0 } {
+                continue
+            }
+            dict set symtab st_shnm [table get $S(sections) $st_shndx 1]
+            dict set symtab st_bind [ST_BIND toSym [expr { $st_info >>   4 }]]
+            dict set symtab st_name [my getString $S(strings) $st_name]
+            dict set symtab st_type [ST_TYPE toSym [expr { $st_info &  0xf }]]
+        }
+        ELFCLASS32-rel    {
+               set r_info [dict get $rel r_info]
+               dict set rel r_sym   [expr { $r_info >> 8    }]
+               dict set rel r_type  [expr { $r_info  & 0xFF }]
+        }
+        ELFCLASS64-rel    {
+               set r_info [dict get $rel r_info]
+               dict set rel r_sym   [expr { $r_info >> 32         }]
+               dict set rel r_type  [expr { $r_info  & 0xFFFFFFFF }]
+        }
+        ELFCLASS32-rela    {
+               set r_info [dict get $rela r_info]
+               dict set rel r_sym   [expr { $r_info >> 8    }]
+               dict set rel r_type  [expr { $r_info  & 0xFF }]
+        }
+        ELFCLASS64-rela    {
+               set r_info [dict get $rela r_info]
+               dict set rela r_sym   [expr { $r_info >> 32         }]
+               dict set rela r_type  [expr { $r_info  & 0xFFFFFFFF }]
+        }
+        note   { }
+    }
 }
 
 ::oo::class create ::elf::elf {
+
+    method getSectionDecode { type } {
+        my variable my_class
+        if { [dict exists $::elf::sectionDecode $type] } {
+            return [dict get $::elf::sectionDecode $type]
+        }
+
+        dict get $::elf::sectionDecode $my_class-$type
+    }
 
     constructor { { file {} } } {
         namespace eval [self namespace] { namespace path [list ::elf [namespace path]] }
@@ -82,18 +153,13 @@ namespace eval ::elf {
         my variable my_data  ;  set my_data  ""
 
         my variable S
-        set S(sections) [list [list sh_index {*}$::elf::v_sec]]
-        set S(segments) [list [list  p_index {*}$::elf::v_prg]]
-        set S(symbols)  [list [list st_index {*}$::elf::v_sym32 st_shnm st_bind st_type]]
 
         if { $file ne {} } {
             my readFile $file
         }
     }
-    method header   {} { my variable elfheader;  set elfheader}
-    method sections {} { my variable S ;  set S(sections) }
-    method segments {} { my variable S ;  set S(segments) }
-    method symbols  {} { my variable S ;  set S(symbols)  }
+    method header {} { my variable elfheader;  set elfheader}
+    method get { what } { my variable S ;  set S($what) }
 
     method readFile {fname} {
         with file = [::open $fname rb] {
@@ -104,13 +170,21 @@ namespace eval ::elf {
         return [my decodeData [chan read $chan]]
     }
     method decodeData {data} {
+        variable S
         variable elfdata  $data
         variable position 0
         variable elfheader [my readElfHeader]
         dict with elfheader {
             my readSectionHeaders $e_shoff [expr { $e_shnum * $e_shentsize }] $e_shstrndx
             my readSegmentHeaders $e_phoff [expr { $e_phnum * $e_phentsize }] 
-            my readSymbolTable
+            set S(strings)   [my readStringTable]
+
+            table foreachrow $S(sections) {
+                set type [string range [string tolower $sh_type] 4 end]
+                if { $type in $::elf::sectionTypes } {
+                    my readHeaders $sh_name $type $sh_offset $sh_size n_index [my getSectionDecode $type]
+                }
+            }
         }
         return $elfheader
     }
@@ -126,8 +200,8 @@ namespace eval ::elf {
     method getSectionHeaderByName  { item } { my getHeader $item sections { $sh_name  eq $item } }
     method getSectionHeaderByIndex { item } { my getHeader $item sections { $sh_index == $item } }
     method getSegmentHeaderByIndex { item } { my getHeader $item segments {  $p_index == $item } }
-    method getSymbolByName         { item } { my getHeader $item symbols  { $st_name  eq $item } }
-    method getSymbolByIndex        { item } { my getHeader $item symbols  { $st_index == $item } }
+    method getSymbolByName         { item } { my getHeader $item symtab  { $st_name  eq $item } }
+    method getSymbolByIndex        { item } { my getHeader $item symtab  { $st_index == $item } }
 
     method getSectionData { header offsetName sizeName } {
         dict update header $offsetName offset $sizeName size
@@ -177,6 +251,7 @@ namespace eval ::elf {
 
     method readHeaders { type format offset size indexName update } {
         variable S
+        set S($type) [dict get $::elf::sectionHeaders $format]
         set here [my seekData $offset]                          ; # Seek to where the section header table is located.
         set end [expr { $here + $size }]
 
@@ -211,27 +286,6 @@ namespace eval ::elf {
                 set p_type   [PR_TYPE  toSym $p_type]
                 #set p_flags [P_FLAGS toSym $p_flags]
             }
-        }
-    }
-    method readSymbolTable {} {
-        my variable S
-        set strings   [my readStringTable]
-        set symheader [my getSectionHeaderByName .symtab]
-
-        dict import symheader sh_type sh_offset sh_size sh_entsize
-        if {$sh_type ne "SHT_SYMTAB"} {
-            error "expected symbol table section type of SHT_SYMTAB, got $sh_type"
-        }
-
-        my readHeaders symbols symbol $sh_offset $sh_size st_index {
-            dict import symbol st_name st_info st_shndx
-            if { $st_shndx == 0 } {
-                continue
-            }
-            dict set symbol st_shnm [table get $S(sections) $st_shndx 1]
-            dict set symbol st_bind [ST_BIND toSym [expr { $st_info >>   4 }]]
-            dict set symbol st_name [my getString $strings $st_name]
-            dict set symbol st_type [ST_TYPE toSym [expr { $st_info &  0xf }]]
         }
     }
 

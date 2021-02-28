@@ -15,8 +15,8 @@ dict with header {
     }]
 }
 print
-print [table justify [$e sections]]
+print [table justify [$e get sections]]
 print
-print [table justify [$e segments]]
+print [table justify [$e get segments]]
 print
-print [table justify [$e symbols]]
+print [table justify [$e get .symtab]]
