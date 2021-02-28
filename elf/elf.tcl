@@ -227,6 +227,8 @@ namespace eval ::elf {
             if { $st_shndx == 0 } {
                 continue
             }
+            dict set symbol st_shnm [table get $S(sections) $st_shndx 1]
+            dict set symbol st_bind [ST_BIND toSym [expr { $st_info >>   4 }]]
             dict set symbol st_name [my getString $strings $st_name]
             dict set symbol st_type [ST_TYPE toSym [expr { $st_info &  0xf }]]
         }
