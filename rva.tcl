@@ -2,6 +2,7 @@
 #
 set root [file dirname [file normalize [info script]]]
 
+source $root/jbr.tcl/dict.tcl
 source $root/jbr.tcl/func.tcl
 source $root/jbr.tcl/list.tcl
 source $root/jbr.tcl/shim.tcl
@@ -16,6 +17,14 @@ proc % { body } {
     string map { % $ } [uplevel subst -nocommands [list $body]] 
 }
 
+proc assert-eq { a b msg } {
+    set va [uplevel $a]
+    set vb [uplevel $b]
+    if { $va ne $vb } {
+        error "failed assert $va != $vb : $a :: $b ::: $msg"
+    }
+}
+
 proc  print { args } { puts [join $args " "] }
 proc eprint { args } { puts stderr $args }
 
@@ -26,17 +35,24 @@ proc _enum { func name bits message args } {
     lassign [regsub -all {[=._]} $bits " "] fr to
 
     proc ::tcl::mathfunc::$name { value } [% { return [expr { ${func}(%value, %::rva::registers::$name, "$message") * exp2($to) }] }]
+
+    set mask [msk2 $fr $to]
+    proc dis_$name { value } [% {
+        lindex %::rva::registers::$name [expr { ( %value & $mask ) >> ($to-1) }]
+    }]
 }
 interp alias {} enum {} _enum enum
 interp alias {} flag {} _enum flag
+
 
 proc register { name bits args } {
     enum $name $bits "expected register name found" {*}$args
 
     proc tcl::mathfunc::match_${name} { value } [% { expr { %value in [dict keys %::rva::registers::$name] } }]
+        
 }
 
-proc immediate { name Bits } {
+proc immediate { name Bits width } {
     set bits [lreverse [split $Bits |]]
     set lo 0
     foreach bit $bits {
@@ -57,20 +73,16 @@ proc immediate { name Bits } {
             }
         }
         set hi [expr { $lo + $size }]
-        set mask [expr { msk2($hi, $lo) }]
+        set mask [format 0x%08X [expr { msk2($hi, $lo) }]]
         set shift [expr { $pos - $lo }]
         set sop [expr { $shift < 0 ? ">>" : "<<" }]
-        lappend expr "((\$value & [expr { msk2($hi, $lo) }]) $sop [expr { abs($shift) }])"
+        set dop [expr { $shift > 0 ? ">>" : "<<" }]
+        lappend expr "((\$value & $mask) $sop [expr { abs($shift) }])"
+        lappend disa "((\$value $dop [expr { abs($shift) }]) & $mask)"
         set lo $hi
     }
     set expr [join $expr |]
-
-    proc ::tcl::mathfunc::label { value } {
-        if { [info exists ::LABEL($value)] } {
-            return [expr { $::LABEL($value) - $::LABEL(.) }]
-        }
-        return $value
-    }
+    set disa [join $disa |]
 
     # Create a function that computes the bits of an immediate.
     # 
@@ -79,6 +91,18 @@ proc immediate { name Bits } {
         return [expr { $expr }]
     }]
 
+    if { $width == "unsigned" } {
+        proc dis_$name { value } [% {
+            expr { $disa }
+        }]
+    } else {
+        proc dis_$name { value } [% {
+            expr { signed($disa, $width) }
+        }]
+    }
+
+    assert-eq [%  { ::tcl::mathfunc::$name 0xffffffff }]  [% { ::tcl::mathfunc::$name [dis_$name [::tcl::mathfunc::$name 0xffffffff]] }] "\n\t$expr\n\t$disa"
+
     # Create a function that checks the validity of an immediate.
     # TODO: Check sign/unsigned value and use abs().
     set size [expr { exp2($hi) }]
@@ -86,7 +110,14 @@ proc immediate { name Bits } {
 }
 
 namespace eval ::tcl::mathfunc {
-    proc msk2 { hi lo } { format 0x%08x [expr { 0xffffffff & ((exp2($hi) - 1) ^ (exp2($lo) - 1)) }] }
+    proc label { value } {
+        if { [info exists ::LABEL($value)] } {
+            return [expr { $::LABEL($value) - $::LABEL(.) }]
+        }
+        return $value
+    }
+
+    proc msk2 { hi lo } { format 0x%08X [expr { 0xffffffff & ((exp2($hi) - 1) ^ (exp2($lo) - 1)) }] }
     proc exp2 { n } { return [expr { 1 << $n }] }
 
     proc enum { name names message } { 
@@ -122,7 +153,14 @@ namespace eval ::tcl::mathfunc {
     proc match_x1 rd { expr { $rd eq "x1" || $rd eq "ra"   } }
     proc match_x2 rd { expr { $rd eq "x2" || $rd eq "sp"   } }
     proc match_0  vx { expr { $vx ==   0 } }
+
+    proc signed { value bits } {
+        expr { $value - (($value & exp2($bits-1)) == 0 ? 0 : exp2($bits)) }
+    }
+
+    namespace export msk2
 }
+namespace import ::tcl::mathfunc::msk2
 
 # Add a curry for the op, allowing defaults in at any arg position
 #
@@ -147,9 +185,11 @@ proc alias { op args } {
 
 proc opcode { op args } {
     lsplit $args args mapp
-    set bits [pick { apply { x { expr { [string first = $x] != -1 } } } } $args]    ; # Choose the bit def args : x..y=k
-    set bits [fold { apply { { x y } { expr { $x | bits($y) } } } } 0 $bits]        ; # Reduce bits with bits() function
-    set bits [format 0x%08x $bits]                                                  ; # Format as 0x0Hex
+    set Bits [pick { apply { x { expr { [string first = $x] != -1 } } } } $args]    ; # Choose the bit def args : x..y=k
+    set bits [fold { apply { { x y } { expr { $x | bits($y) } } } } 0 $Bits]        ; # Reduce bits with bits() function
+    set bits [format 0x%08X $bits]                                                  ; # Format as 0x0Hex
+    set mask [fold { apply { { x y } { expr { $x | mask($y) } } } } 0 $Bits]        ; # Reduce bits with bits() function
+    set mask [format 0x%08X $mask]                                                  ; # Format as 0x0Hex
     set pars [pick { apply { x { expr { [string first = $x] == -1 } } } } $args]    ; # Choose the proper args
     set vars [join [map p $pars { I \$$p }] " "]                                    ; # variable expansion for assemble comment
     set expr [join [list $bits {*}[map p $pars { I "${p}(\$$p)" }]] |]              ; # build bits expression
@@ -167,6 +207,7 @@ proc opcode { op args } {
     proc  $op $pars "assemble \[.$op $vars] \"[concat $op {*}$vars]\""              ; # A proc to assmeble the opcode at .
 
     dict set ::opcode $op bits $bits                                                ; # Save some info about op
+    dict set ::opcode $op mask $mask
     dict set ::opcode $op pars $pars
     dict set ::opcode $op vars $vars
 
@@ -199,6 +240,11 @@ proc opcode { op args } {
             return [shim:next .$mop $mvars]
         }]
     }
+
+    # generate the disassembler for this opcode
+    #
+    set body [join [list $op {*}[map p $pars { I "\[dis_${p} \$word]" }]] " "]
+    proc dis_$bits { word } "list $body"
 }
 
 proc assemble { opcode instr } {
@@ -262,6 +308,32 @@ proc reg-names { names } {
     zip $names [iota 0 [llength $names]-1]
 }
 
+proc disassemble { args } {
+    dict for {op opcode} $::opcode {                            ; # 2 level lookup table  mask --> bits --> opcode
+        dict with opcode {
+            dict lappend decode $mask $bits $opcode
+        }
+    }
+
+    #eprint $decode
+
+    foreach arg $args {
+        set found no
+        dict for {mask opcodes} $decode {                       ; # foreach major opcode mask
+            set bits [format 0x%08X [expr { $arg & $mask }]]    ; # compute the significant bits in the code
+
+            if { [dict exists $opcodes $bits] } {
+                eprint {*}[dis_$bits $arg]                          ; # disassemle
+                set found yes
+                break
+            }
+        }
+        if { ! $found } {
+            error "unknown instruction $arg"
+        }
+    }
+}
+
 proc main { args } {
 
     set March rv32IMAFDZicsr_Zifencei                           ; # The default march
@@ -271,9 +343,11 @@ proc main { args } {
     set match {^rv(32|64)(i|e)?(m)?(a)?(f)?(d)?(q)?(c)?((z[a-z]*)?(_(z[a-z]*))*)((_x[a-z]+)*)$}
 
     set files {}
+    set disassemble no
     for { set i 0 } { $i < [llength $args] } { incr i } {
         set arg [lindex $args $i]
         switch $arg {
+            -d      { set disassemble yes }
             -march  { set March [lindex $args [incr i]] }
             default { lappend files $arg }
         }
@@ -346,6 +420,10 @@ proc main { args } {
 
     include macros.rva
 
+    if { $disassemble } {
+        disassemble {*}$files
+        exit
+    }
     foreach file $files {
         if { $file eq "-" } {
             eval [read stdin]

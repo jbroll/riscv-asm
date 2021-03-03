@@ -19,7 +19,7 @@ proc register { name bits args } {
     set ::$name [dict keys [lindex $args 0]]
     lappend ::rclasses $name
 }
-proc immediate { name bits } {
+proc immediate { name bits width } {
     lappend ::iclasses $name
 }
 proc flag { name bits message args } {
