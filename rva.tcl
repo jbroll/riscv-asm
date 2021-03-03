@@ -38,18 +38,17 @@ proc _enum { func name bits message args } {
 
     set mask [msk2 $fr $to]
     proc dis_$name { value } [% {
-        lindex %::rva::registers::$name [expr { ( %value & $mask ) >> ($to-1) }]
+        lindex [dict keys %::rva::registers::$name] [expr { ( %value & $mask ) >> $to }]
     }]
 }
 interp alias {} enum {} _enum enum
 interp alias {} flag {} _enum flag
 
 
-proc register { name bits args } {
-    enum $name $bits "expected register name found" {*}$args
+proc register { name bits reg api } {
+    enum $name $bits "expected register name found" $reg $api
 
     proc tcl::mathfunc::match_${name} { value } [% { expr { %value in [dict keys %::rva::registers::$name] } }]
-        
 }
 
 proc immediate { name Bits width } {
@@ -183,6 +182,10 @@ proc alias { op args } {
     }]
 }
 
+proc dis_x0 { word } { return x0 }
+proc dis_x1 { word } { return x1 }
+proc dis_x2 { word } { return x2 }
+
 proc opcode { op args } {
     lsplit $args args mapp
     set Bits [pick { apply { x { expr { [string first = $x] != -1 } } } } $args]    ; # Choose the bit def args : x..y=k
@@ -239,12 +242,18 @@ proc opcode { op args } {
             } 
             return [shim:next .$mop $mvars]
         }]
-    }
 
-    # generate the disassembler for this opcode
-    #
-    set body [join [list $op {*}[map p $pars { I "\[dis_${p} \$word]" }]] " "]
-    proc dis_$bits { word } "list $body"
+        # generate a dissassembler that maps to the mopp code.
+        #
+        set body [join [list $mop {*}[map p $mvals { I "\[dis_${p} \$word]" }]] " "]
+        proc dis_$bits { word } "list $body"
+
+    } else {
+        # generate the disassembler for this opcode
+        #
+        set body [join [list $op {*}[map p $pars { I "\[dis_${p} \$word]" }]] " "]
+        proc dis_$bits { word } "list $body"
+    }
 }
 
 proc assemble { opcode instr } {
