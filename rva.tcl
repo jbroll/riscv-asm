@@ -2,13 +2,15 @@
 #
 set root [file dirname [file normalize [info script]]]
 
-source $root/jbr.tcl/dict.tcl
-source $root/jbr.tcl/func.tcl
-source $root/jbr.tcl/list.tcl
-source $root/jbr.tcl/shim.tcl
-source $root/jbr.tcl/unix.tcl
-source $root/jbr.tcl/stack.tcl
-source $root/jbr.tcl/string.tcl
+package require jbr::dict
+package require jbr::func
+package require jbr::list
+package require jbr::shim
+package require jbr::unix
+package require jbr::stack
+package require jbr::string
+
+source $root/rvd.tcl
 
 namespace eval rva {}                   ; # Someday everything will live here
 namespace eval rva::registers {}
@@ -24,9 +26,6 @@ proc assert-eq { a b msg } {
         error "failed assert $va != $vb : $a :: $b ::: $msg"
     }
 }
-
-proc  print { args } { puts [join $args " "] }
-proc eprint { args } { puts stderr $args }
 
 set LABEL(.) 0
 
@@ -100,7 +99,8 @@ proc immediate { name Bits width } {
         }]
     }
 
-    assert-eq [%  { ::tcl::mathfunc::$name 0xffffffff }]  [% { ::tcl::mathfunc::$name [dis_$name [::tcl::mathfunc::$name 0xffffffff]] }] "\n\t$expr\n\t$disa"
+    assert-eq [% { ::tcl::mathfunc::$name 0xffffffff }]  \
+              [% { ::tcl::mathfunc::$name [dis_$name [::tcl::mathfunc::$name 0xffffffff]] }] "\n\t$expr\n\t$disa"
 
     # Create a function that checks the validity of an immediate.
     # TODO: Check sign/unsigned value and use abs().
@@ -317,29 +317,27 @@ proc reg-names { names } {
     zip $names [iota 0 [llength $names]-1]
 }
 
-proc disassemble { args } {
+proc init_disassemble { args } {
     dict for {op opcode} $::opcode {                            ; # 2 level lookup table  mask --> bits --> opcode
         dict with opcode {
-            dict lappend decode $mask $bits $opcode
+            dict lappend ::decode $mask $bits $opcode
         }
     }
+}
 
-    #eprint $decode
+proc disassemble_op { op } {
+    set found no
+    dict for {mask opcodes} $::decode {                     ; # foreach major opcode mask
+        set bits [format 0x%08X [expr { $arg & $mask }]]    ; # compute the significant bits in the code
 
-    foreach arg $args {
-        set found no
-        dict for {mask opcodes} $decode {                       ; # foreach major opcode mask
-            set bits [format 0x%08X [expr { $arg & $mask }]]    ; # compute the significant bits in the code
-
-            if { [dict exists $opcodes $bits] } {
-                eprint {*}[dis_$bits $arg]                          ; # disassemle
-                set found yes
-                break
-            }
+        if { [dict exists $opcodes $bits] } {
+            eprint {*}[dis_$bits $arg]                          ; # disassemle
+            set found yes
+            break
         }
-        if { ! $found } {
-            error "unknown instruction $arg"
-        }
+    }
+    if { ! $found } {
+        error "unknown instruction $op"
     }
 }
 
@@ -430,9 +428,11 @@ proc main { args } {
     include macros.rva
 
     if { $disassemble } {
+        disassemble_init
         disassemble {*}$files
         exit
     }
+
     foreach file $files {
         if { $file eq "-" } {
             eval [read stdin]

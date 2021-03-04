@@ -1,13 +1,13 @@
 
 package require Tcl 8.6
-source ../jbr.tcl/dict.tcl
-source ../jbr.tcl/enum.tcl
-source ../jbr.tcl/func.tcl
-source ../jbr.tcl/list.tcl
-source ../jbr.tcl/pipe.tcl
-source ../jbr.tcl/print.tcl
-source ../jbr.tcl/table.tcl
-source ../jbr.tcl/with.tcl
+package require jbr::dict
+package require jbr::enum
+package require jbr::func
+package require jbr::list
+package require jbr::pipe
+package require jbr::print
+package require jbr::table
+package require jbr::with
 
 proc % { body } {
     string map { % $ } [uplevel subst -nocommands [list $body]] 
