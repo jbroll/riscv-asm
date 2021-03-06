@@ -24,7 +24,7 @@ proc immediate { name bits width } {
 }
 proc flag { name bits message args } {
 }
-proc enum { name bits message args } {
+proc rva-enum { name bits message args } {
 
 }
 

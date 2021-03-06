@@ -5,11 +5,13 @@ set root [file dirname [file normalize [info script]]]
 package require jbr::dict
 package require jbr::func
 package require jbr::list
+package require jbr::print
 package require jbr::shim
 package require jbr::unix
 package require jbr::stack
 package require jbr::string
 
+source $root/elf/elf.tcl
 source $root/rvd.tcl
 
 namespace eval rva {}                   ; # Someday everything will live here
@@ -40,12 +42,14 @@ proc _enum { func name bits message args } {
         lindex [dict keys %::rva::registers::$name] [expr { ( %value & $mask ) >> $to }]
     }]
 }
-interp alias {} enum {} _enum enum
 interp alias {} flag {} _enum flag
 
+proc rva-enum { args } {
+    _enum enum {*}$args
+}
 
 proc register { name bits reg api } {
-    enum $name $bits "expected register name found" $reg $api
+    rva-enum $name $bits "expected register name found" $reg $api
 
     proc tcl::mathfunc::match_${name} { value } [% { expr { %value in [dict keys %::rva::registers::$name] } }]
 }
@@ -182,9 +186,12 @@ proc alias { op args } {
     }]
 }
 
+proc dis_0  { word } { return  0 }
 proc dis_x0 { word } { return x0 }
 proc dis_x1 { word } { return x1 }
 proc dis_x2 { word } { return x2 }
+
+lappend ::optable { op mask bits pars vars }
 
 proc opcode { op args } {
     lsplit $args args mapp
@@ -209,10 +216,13 @@ proc opcode { op args } {
     proc .$op $pars "expr { $expr }"                                                ; # A proc to compute the opcode value
     proc  $op $pars "assemble \[.$op $vars] \"[concat $op {*}$vars]\""              ; # A proc to assmeble the opcode at .
 
-    dict set ::opcode $op bits $bits                                                ; # Save some info about op
+    dict set ::opcode $op op   $op                                                 ; # Save some info about op
     dict set ::opcode $op mask $mask
+    dict set ::opcode $op bits $bits                                               ; # Save some info about op
     dict set ::opcode $op pars $pars
     dict set ::opcode $op vars $vars
+
+    lappend ::optable [list $op $mask $bits $pars $vars]
 
     if { $mapp ne {} } {                                                            ; # Build a short op map?
         set mvals [lassign $mapp mop]                                               ; # Split mop and mvals
@@ -243,20 +253,25 @@ proc opcode { op args } {
             return [shim:next .$mop $mvars]
         }]
 
-        # generate a dissassembler that maps to the mopp code.
+        # generate a disassembler that maps to the mopp code.
         #
-        set body [join [list $mop {*}[map p $mvals { I "\[dis_${p} \$word]" }]] " "]
-        proc dis_$bits { word } "list $body"
-
+        set body [join [list list $mop {*}[map p $mvals { I "\[dis_${p} \$word]" }]] " "]
+        if { [info procs dis_${mask}_${bits}] != "" } {
+            error "duplicate opcode decodes: $op - $bit"
+        }
     } else {
         # generate the disassembler for this opcode
         #
-        set body [join [list $op {*}[map p $pars { I "\[dis_${p} \$word]" }]] " "]
-        proc dis_$bits { word } "list $body"
+        set body [join [list list $op {*}[map p $pars { I "\[dis_${p} \$word]" }]] " "]
+        if { [info procs dis_${mask}_${bits}] != "" } {
+            error "duplicate opcode decodes: $op - $bits"
+        }
     }
+    dict set ::opcode $op disa $body
 }
 
 proc assemble { opcode instr } {
+    print assemble
     set line [dict get [info frame 3] line]
 
     if { ($opcode & 0x00000003) == 0x00000003 } { 
@@ -317,29 +332,6 @@ proc reg-names { names } {
     zip $names [iota 0 [llength $names]-1]
 }
 
-proc init_disassemble { args } {
-    dict for {op opcode} $::opcode {                            ; # 2 level lookup table  mask --> bits --> opcode
-        dict with opcode {
-            dict lappend ::decode $mask $bits $opcode
-        }
-    }
-}
-
-proc disassemble_op { op } {
-    set found no
-    dict for {mask opcodes} $::decode {                     ; # foreach major opcode mask
-        set bits [format 0x%08X [expr { $arg & $mask }]]    ; # compute the significant bits in the code
-
-        if { [dict exists $opcodes $bits] } {
-            eprint {*}[dis_$bits $arg]                          ; # disassemle
-            set found yes
-            break
-        }
-    }
-    if { ! $found } {
-        error "unknown instruction $op"
-    }
-}
 
 proc main { args } {
 
@@ -350,10 +342,12 @@ proc main { args } {
     set match {^rv(32|64)(i|e)?(m)?(a)?(f)?(d)?(q)?(c)?((z[a-z]*)?(_(z[a-z]*))*)((_x[a-z]+)*)$}
 
     set files {}
+    set showtable no
     set disassemble no
     for { set i 0 } { $i < [llength $args] } { incr i } {
         set arg [lindex $args $i]
         switch $arg {
+            -t      { set showtable   yes }
             -d      { set disassemble yes }
             -march  { set March [lindex $args [incr i]] }
             default { lappend files $arg }
@@ -431,6 +425,9 @@ proc main { args } {
         disassemble_init
         disassemble {*}$files
         exit
+    }
+    if { $showtable } {
+        print [table justify $::optable]
     }
 
     foreach file $files {

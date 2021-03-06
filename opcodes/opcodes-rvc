@@ -45,6 +45,6 @@ opcode c.swsp     crs2  ciImm6w     1..0=2 15..13=6                        ->  s
 opcode c.mv       crdnz crs2nz      1..0=2 15..13=4 12=0                   ->  add  crdnz   x0   crs2nz
 opcode c.add      crdnz crs2nz      1..0=2 15..13=4 12=1                   ->  add  crdnz  crdnz crs2nz
 
-opcode c.jr        crs1nz          1..0=2 15..13=4 12=0         6..2=0     ->  jalr   x0   crs1nz 0
-opcode c.jalr      crs1nz          1..0=2 15..13=4 12=1         6..2=0     ->  jalr   x1   crs1nz 0
+opcode c.jr        crs1nz           1..0=2 15..13=4 12=0         6..2=0     ->  jalr   x0   crs1nz 0
+opcode c.jalr      crs1nz           1..0=2 15..13=4 12=1         6..2=0     ->  jalr   x1   crs1nz 0
 

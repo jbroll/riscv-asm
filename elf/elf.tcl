@@ -14,12 +14,9 @@ proc % { body } {
 }
 
 namespace eval ::elf {
-    namespace export elf
-    namespace ensemble create
-
     variable version 1.0.1
 
-    enum create EI_CLASS  { 1 ELFCLASS32     2 ELFCLASS64    } 
+    enum create EI_CLASS  { 1 ELFCLASS32     2 ELFCLASS64    }
     enum create EI_DATA   { 1 ELFDATA2LSB    2 ELFDATA2MSB   } 
     enum create E_VERSION { 1 EV_CURRENT } 
     enum create E_TYPE    { 0 ET_NONE    1 ET_REL        2 ET_EXEC       3 ET_DYN     4 ET_CORE }
@@ -43,6 +40,20 @@ namespace eval ::elf {
                              0x8C TMS320C6000 0xB7 ARM8        0xF3 RISC-V      0xF7 BPF
                             0x101 WDC65C816
     } { concat [expr { $v }] $s }]]
+
+    enum create DT_TAG [concat {*}[map { v s } {  
+        0          DT_NULL		1  DT_NEEDED	2  DT_PLTRELSZ	3  DT_PLTGOT	
+        4          DT_HASH		5  DT_STRTAB	6  DT_SYMTAB	7  DT_RELA		
+        8          DT_RELASZ	9  DT_RELAENT	10 DT_STRSZ	    11 DT_SYMENT	
+        12         DT_INIT		13 DT_FINI		14 DT_SONAME	15 DT_RPATH 	
+        16         DT_SYMBOLIC	17 DT_REL	    18 DT_RELSZ	    19 DT_RELENT	
+        20         DT_PLTREL	21 DT_DEBUG	    22 DT_TEXTREL	23 DT_JMPREL	
+        32         DT_ENCODING			
+        0x6ffffd00 DT_VALRNGLO	0x6ffffdff DT_VALRNGHI	0x6ffffe00 DT_ADDRRNGLO 0x6ffffeff DT_ADDRRNGHI
+        0x6ffffff0 DT_VERSYM	0x6ffffff9 DT_RELACOUNT 0x6ffffffa DT_RELCOUNT	0x6ffffffb DT_FLAGS_1	
+        0x6ffffffc DT_VERDEF	0x6ffffffd DT_VERDEFNUM 0x6ffffffe DT_VERNEED	0x6fffffff DT_VERNEEDNUM
+    } { concat [expr { $v }] $s }]]
+        
     
     set v_ident { elfmag0 elfmagName ei_class ei_data ei_version ei_osabi ei_abiversion ei_pad }
     set v_hdr   { e_type e_machine e_version e_entry e_phoff e_shoff e_flags e_ehsize e_phentsize e_phnum e_shentsize e_shnum e_shstrndx }
@@ -53,14 +64,18 @@ namespace eval ::elf {
     set v_rel   { r_offset r_info }
     set v_rela  { r_offset r_info r_addend }
     set v_note  { n_name n_desc n_type }
+    set v_dyn   { d_tag d_value }
 
     set sectionHeaders [% {
         section { { sh_index $::elf::v_sec                            } }
         segment { {  p_index $::elf::v_prg                            } }
-        symtab  { { st_index $::elf::v_sym32 st_shnm st_bind st_type  } }
         rel     { { r_index  $::elf::v_rel   r_sym r_type             } }
         rela    { { r_index  $::elf::v_rela  r_sym r_type             } }
         note    { { n_index  $::elf::v_note                           } }
+        dynamic { { d_index  $::elf::v_dyn                            } }
+
+        ELFCLASS32-symtab  { { st_index $::elf::v_sym32 st_shnm st_bind st_type  } }
+        ELFCLASS64-symtab  { { st_index $::elf::v_sym64 st_shnm st_bind st_type  } }
     }]
 
     set formats [% {
@@ -96,9 +111,14 @@ namespace eval ::elf {
         ELFCLASS32-ELFDATA2MSB-note    { size 16   names {$v_note}  scan {Iu Iu Iu} }
         ELFCLASS64-ELFDATA2LSB-note    { size 24   names {$v_note}  scan {wu wu wu} }
         ELFCLASS64-ELFDATA2MSB-note    { size 24   names {$v_note}  scan {Wu Wu Wu} }
+        
+        ELFCLASS32-ELFDATA2LSB-dynamic { size  8   names {$v_dyn}   scan {iu iu} }
+        ELFCLASS32-ELFDATA2MSB-dynamic { size  8   names {$v_dyn}   scan {Iu Iu} }
+        ELFCLASS64-ELFDATA2LSB-dynamic { size 16   names {$v_dyn}   scan {wu wu} }
+        ELFCLASS64-ELFDATA2MSB-dynamic { size 16   names {$v_dyn}   scan {Wu Wu} }
     }]
 
-    set sectionTypes { symtab rel rela note }
+    set sectionTypes { symtab rel rela note dynamic }
     set sectionDecode {
         symtab {
             dict import symtab st_name st_info st_shndx
@@ -130,7 +150,12 @@ namespace eval ::elf {
                dict set rela r_sym   [expr { $r_info >> 32         }]
                dict set rela r_type  [expr { $r_info  & 0xFFFFFFFF }]
         }
-        note   { }
+        note    { }
+        dynamic { 
+            dict update dynamic d_tag d_tag {
+                set d_tag [DT_TAG toSym $d_tag]
+            }
+        }
     }
 }
 
@@ -184,13 +209,21 @@ namespace eval ::elf {
 
         dict get $::elf::sectionDecode $my_class-$type
     }
+    method getSectionHeader { type } {
+        my variable my_class
+        if { [dict exists $::elf::sectionHeaders $type] } {
+            return [dict get $::elf::sectionHeaders $type]
+        }
+
+        dict get $::elf::sectionHeaders $my_class-$type
+    }
 
     method getHeader { item type expr } {
         variable S
         pipe {
             set S($type) |
             table row ~ item $expr |
-            table todict ~
+            table rowdict ~
         }
     }
     method getSectionHeaderByName  { item } { my getHeader $item sections { $sh_name  eq $item } }
@@ -200,8 +233,8 @@ namespace eval ::elf {
     method getSymbolByIndex        { item } { my getHeader $item symtab  { $st_index == $item } }
 
     method getSectionData { header offsetName sizeName } {
-        dict update header $offsetName offset $sizeName size
-        my Read $offset $size
+        dict update header $offsetName offset $sizeName size {}
+        my readDataAt $offset $size
     }
     method getSectionDataByIndex { index } { my getSectionData [my getSectionHeaderByIndex $index] sh_offset sh_size   }
     method getSegmentDataByIndex { index } { my getSectionData [my getSectionHeaderByIndex $index]  p_offset  p_filesz }
@@ -216,19 +249,19 @@ namespace eval ::elf {
         }
 
         dict update ident ei_class ei_class ei_data ei_data {
-            set ei_class [EI_CLASS toSym $ei_class]
-            set ei_data  [EI_DATA  toSym $ei_data]
+            set ei_class [::elf::EI_CLASS toSym $ei_class]
+            set ei_data  [::elf::EI_DATA  toSym $ei_data]
         }
 
         my variable my_class my_data
         set my_class $ei_class
         set my_data  $ei_data
-    
+
         set other [my scanDataWithFormat header]                ; # Convert the remainder of the header.
         dict update other e_type e_type e_version e_version e_machine e_machine {
-            set e_machine [CPU_TYPE  toSym $e_machine]
-            set e_type    [E_TYPE    toSym $e_type]
-            set e_version [E_VERSION toSym $e_version]
+            set e_machine [::elf::CPU_TYPE  toSym $e_machine]
+            set e_type    [::elf::E_TYPE    toSym $e_type]
+            set e_version [::elf::E_VERSION toSym $e_version]
         }
     
         dict merge $ident $other
@@ -247,7 +280,7 @@ namespace eval ::elf {
 
     method readHeaders { type format offset size indexName update } {
         variable S
-        set S($type) [dict get $::elf::sectionHeaders $format]
+        set S($type) [my getSectionHeader $format]
         set here [my seekData $offset]                          ; # Seek to where the section header table is located.
         set end [expr { $here + $size }]
 

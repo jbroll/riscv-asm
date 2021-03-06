@@ -62,7 +62,7 @@ register fs1 19..15  $regfp $apifp
 register fs2 24..20  $regfp $apifp
 register fs3 31..27  $regfp $apifp
 
-enum rm 14..12 "expected rounding mode" { rne 0 rtz 1 rnd 2 rup 3 rmm 4 dyn 7 }
+rva-enum rm 14..12 "expected rounding mode" { rne 0 rtz 1 rnd 2 rup 3 rmm 4 dyn 7 }
 
 set apc   [reg-names [lrange [dict keys $api]   8 15]]
 set rxc   [reg-names [lrange [dict keys $reg]   8 15]]
