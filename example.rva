@@ -7,6 +7,6 @@ top:
     la      t0 top
     pop
     jmp     top
-    jr      ra
+    ret
 
     

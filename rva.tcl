@@ -152,10 +152,13 @@ namespace eval ::tcl::mathfunc {
         expr { msk2($n1 eq "" ? $n2 + 1 : $n1 + 1, $n2) }
     }
 
-    proc match_x0 rd { expr { $rd eq "x0" || $rd eq "zero" } }
-    proc match_x1 rd { expr { $rd eq "x1" || $rd eq "ra"   } }
-    proc match_x2 rd { expr { $rd eq "x2" || $rd eq "sp"   } }
-    proc match_0  vx { expr { $vx ==   0 } }
+    proc match_x0   rd { expr { $rd eq "x0" || $rd eq "zero" } }
+    proc match_zero rd { expr { $rd eq "x0" || $rd eq "zero" } }
+    proc match_x1   rd { expr { $rd eq "x1" || $rd eq "ra"   } }
+    proc match_ra   rd { expr { $rd eq "x1" || $rd eq "ra"   } }
+    proc match_x2   rd { expr { $rd eq "x2" || $rd eq "sp"   } }
+    proc match_sp   rd { expr { $rd eq "x2" || $rd eq "sp"   } }
+    proc match_0    vx { expr { $vx ==   0 } }
 
     proc signed { value bits } {
         expr { $value - (($value & exp2($bits-1)) == 0 ? 0 : exp2($bits)) }
@@ -165,25 +168,43 @@ namespace eval ::tcl::mathfunc {
 }
 namespace import ::tcl::mathfunc::msk2
 
-# Add a curry for the op, allowing defaults in at any arg position
+# Add an alias for the op, allowing defaults in at any arg position
 #
 proc alias { op args } {
-    rename $op _$op
     lsplit $args fr to
-    set tt {}
-    foreach arg $to {
-        if { $arg in $fr } { lappend tt \$$arg
-        } else {             lappend tt $arg    }
+    set tt [concat {*}[lmap arg $to { expr { $arg in $fr ? "\$$arg" : "$arg" } }]]
+
+    if { [info procs $op] ne "" } {
+        set fr_count [llength $fr]
+        shim $op { args } [% {
+            if { [llength %args] == $fr_count } {
+                lassign %args $fr
+                tailcall $tt
+            }
+            shim:next $op {*}%args
+        }]
+    } else {
+        proc $op {*}[list $fr] "$tt"
     }
-    proc $op { args } [subst {
-        if { \[llength \$args] == [llength $fr] } {
-            lassign \$args $fr
-            tailcall [join _$tt]
-        }
-        if { \[llength \$args] == [llength [info args _$op]] } {
-            tailcall _$op {*}\$args
-        }
-    }]
+
+    # Build and alias table - later in the disassembler this will be 
+    # consulted to unalias ops
+    #
+    #set to [lassign $to top]
+    #if { [dict exists $::opcode $top] } {
+    #    eprint it's an $op -> $top [dict get $::opcode $top disa]
+    #}
+    #set disa [dict get $::opcode $aop disa]
+    #
+    #proc dis_$op { word } [% {
+    #    set disa $disa
+    #    lassign $disa op {*}$pars
+    #
+    #    if { $match } {
+    #        return $op $vars
+    #    }
+    #    return $disa
+    #}
 }
 
 proc dis_0  { word } { return  0 }
@@ -272,7 +293,6 @@ proc opcode { op args } {
 }
 
 proc assemble { opcode instr } {
-    print assemble
     set line [dict get [info frame 3] line]
 
     if { ($opcode & 0x00000003) == 0x00000003 } { 
@@ -344,7 +364,7 @@ proc main { args } {
 
     set files {}
     set showtable no
-    set disassemble no
+    set ::disassemble no
     for { set i 0 } { $i < [llength $args] } { incr i } {
         set arg [lindex $args $i]
         switch $arg {
