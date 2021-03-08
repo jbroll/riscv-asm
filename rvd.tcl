@@ -39,24 +39,18 @@ proc disassemble_decode { word decode } {
     }
     return  "unknown instruction $op"
 }
-proc disassemble { args } {
 
-    set file [lindex $args 0]
-
-    set e [elf::elf create e $file]
-    set head [$e getSectionHeaderByName .text]
-    set syms [pipe { $e get .symtab | 
-                     table row ~ { $st_name != "" && $st_shnm == ".text" } |
+proc disa_section { elf section } {
+    set syms [pipe { $elf get .symtab | 
+                     table row ~ section section { $st_name != "" && $st_shnm == $section } |
                      table col ~ st_name st_value |
                      table todict |
                      lreverse ~
     }]
-    set data [$e getSectionDataByName .text]
+    set head [$elf getSectionHeaderByName $section]
     set addr [dict get $head sh_addr]
+    set data [$elf getSectionDataByName $section]
     binary scan $data cu* data
-    #set data [map d $data { format %02x $d }]
-
-    print $syms
     set data [lassign $data byte]
     while { [llength $data] } {
         set symbol ""
@@ -77,4 +71,14 @@ proc disassemble { args } {
         }
         set data [lassign $data byte]
     }
+}
+
+proc disassemble { args } {
+
+    set file [lindex $args 0]
+
+    set e [elf::elf create e $file]
+
+    disa_section $e .plt
+    disa_section $e .text
 }

@@ -224,6 +224,10 @@ proc opcode { op args } {
 
     lappend ::optable [list $op $mask $bits $pars $vars]
 
+    # generate the disassembler for this opcode
+    #
+    set body [join [list list $op {*}[map p $pars { I "\[dis_${p} \$word]" }]] " "]
+
     if { $mapp ne {} } {                                                            ; # Build a short op map?
         set mvals [lassign $mapp mop]                                               ; # Split mop and mvals
         set mpars [dict get $::opcode $mop pars]
@@ -253,21 +257,18 @@ proc opcode { op args } {
             return [shim:next .$mop $mvars]
         }]
 
-        # generate a disassembler that maps to the mopp code.
-        #
-        set body [join [list list $mop {*}[map p $mvals { I "\[dis_${p} \$word]" }]] " "]
-        if { [info procs dis_${mask}_${bits}] != "" } {
-            error "duplicate opcode decodes: $op - $bit"
+        if { $::disassemble ne "compact" } {
+            # generate a disassembler that maps to the mopp code.
+            #
+            set body [join [list list $mop {*}[map p $mvals { I "\[dis_${p} \$word]" }]] " "]
         }
-    } else {
-        # generate the disassembler for this opcode
-        #
-        set body [join [list list $op {*}[map p $pars { I "\[dis_${p} \$word]" }]] " "]
-        if { [info procs dis_${mask}_${bits}] != "" } {
-            error "duplicate opcode decodes: $op - $bits"
-        }
+    } 
+
+    if { [info procs dis_${mask}_${bits}] != "" } {
+        error "duplicate opcode decodes: $op - $bits"
     }
-    dict set ::opcode $op disa $body
+    proc dis_${mask}_${bits} { word } $body
+    dict set ::opcode $op disa "dis_${mask}_${bits} \$word"
 }
 
 proc assemble { opcode instr } {
@@ -348,7 +349,8 @@ proc main { args } {
         set arg [lindex $args $i]
         switch $arg {
             -t      { set showtable   yes }
-            -d      { set disassemble yes }
+            -dc     { set ::disassemble compact }
+            -d      { set ::disassemble yes }
             -march  { set March [lindex $args [incr i]] }
             default { lappend files $arg }
         }
@@ -421,7 +423,7 @@ proc main { args } {
 
     include macros.rva
 
-    if { $disassemble } {
+    if { $::disassemble ne no } {
         disassemble_init
         disassemble {*}$files
         exit
