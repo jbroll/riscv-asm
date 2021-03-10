@@ -76,6 +76,8 @@ namespace eval ::elf {
 
         ELFCLASS32-symtab  { { st_index $::elf::v_sym32 st_shnm st_bind st_type  } }
         ELFCLASS64-symtab  { { st_index $::elf::v_sym64 st_shnm st_bind st_type  } }
+        ELFCLASS32-dynsym  { { st_index $::elf::v_sym32 st_shnm st_bind st_type  } }
+        ELFCLASS64-dynsym  { { st_index $::elf::v_sym64 st_shnm st_bind st_type  } }
     }]
 
     set formats [% {
@@ -98,6 +100,11 @@ namespace eval ::elf {
         ELFCLASS64-ELFDATA2LSB-symtab  { size 24   names {$v_sym64} scan {iu cu cu su wu wu} }
         ELFCLASS64-ELFDATA2MSB-symtab  { size 24   names {$v_sym64} scan {Iu cu cu Su Wu Wu} }
 
+        ELFCLASS32-ELFDATA2LSB-dynsym  { size 16   names {$v_sym32} scan {iu iu iu cu cu su} }
+        ELFCLASS32-ELFDATA2MSB-dynsym  { size 16   names {$v_sym32} scan {Iu Iu Iu cu cu Su} }
+        ELFCLASS64-ELFDATA2LSB-dynsym  { size 24   names {$v_sym64} scan {iu cu cu su wu wu} }
+        ELFCLASS64-ELFDATA2MSB-dynsym  { size 24   names {$v_sym64} scan {Iu cu cu Su Wu Wu} }
+
         ELFCLASS32-ELFDATA2LSB-rel     { size  8   names {$v_rel}   scan {iu iu} }
         ELFCLASS32-ELFDATA2MSB-rel     { size  8   names {$v_rel}   scan {Iu Iu} }
         ELFCLASS64-ELFDATA2LSB-rel     { size 16   names {$v_rel}   scan {wu wu} }
@@ -118,8 +125,18 @@ namespace eval ::elf {
         ELFCLASS64-ELFDATA2MSB-dynamic { size 16   names {$v_dyn}   scan {Wu Wu} }
     }]
 
-    set sectionTypes { symtab rel rela note dynamic }
+    set sectionTypes { symtab dynsym rel rela note dynamic }
     set sectionDecode {
+        dynsym {
+            dict import dynsym st_name st_info st_shndx
+            if { $st_info == 0 } {
+                continue
+            }
+            dict set dynsym st_shnm [table get $S(sections) $st_shndx 1]
+            dict set dynsym st_bind [ST_BIND toSym [expr { $st_info >>   4 }]]
+            dict set dynsym st_name [my getString $S(.dynstr) $st_name]
+            dict set dynsym st_type [ST_TYPE toSym [expr { $st_info &  0xf }]]
+        }
         symtab {
             dict import symtab st_name st_info st_shndx
             if { $st_shndx == 0 } {
@@ -127,7 +144,7 @@ namespace eval ::elf {
             }
             dict set symtab st_shnm [table get $S(sections) $st_shndx 1]
             dict set symtab st_bind [ST_BIND toSym [expr { $st_info >>   4 }]]
-            dict set symtab st_name [my getString $S(strings) $st_name]
+            dict set symtab st_name [my getString $S(.strtab) $st_name]
             dict set symtab st_type [ST_TYPE toSym [expr { $st_info &  0xf }]]
         }
         ELFCLASS32-rel    {
@@ -189,7 +206,8 @@ namespace eval ::elf {
         dict with elfheader {
             my readSectionHeaders $e_shoff [expr { $e_shnum * $e_shentsize }] $e_shstrndx
             my readSegmentHeaders $e_phoff [expr { $e_phnum * $e_phentsize }] 
-            set S(strings)   [my readStringTable]
+            set S(.strtab)   [my readStringTable .strtab]
+            set S(.dynstr)   [my readStringTable .dynstr]
 
             table foreachrow $S(sections) {
                 set type [string range [string tolower $sh_type] 4 end]
@@ -276,7 +294,7 @@ namespace eval ::elf {
         my readStrings $sh_offset $sh_size
     }
     method readSectionNames { sh_index } { my readStringsFromSection [my getSectionHeaderByIndex $sh_index] }
-    method readStringTable  {}           { my readStringsFromSection [my getSectionHeaderByName .strtab] }
+    method readStringTable  { name }     { my readStringsFromSection [my getSectionHeaderByName $name] }
 
     method readHeaders { type format offset size indexName update } {
         variable S

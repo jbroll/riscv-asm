@@ -16,13 +16,15 @@ proc dump { args } {
             shoff: [format 0x%08X $e_shoff] shentsize: [format %4d $e_shentsize] shnum: [format %4d $e_shnum] strindx: $e_shstrndx
         }]
     }
-    print [table justify [$e get .dynamic]]
-    print
-    print [table justify [$e get .rela.plt]]
-    print
     print [table justify [$e get sections]]
     print
     print [table justify [$e get segments]]
+    print
+    print [table justify [$e get .dynsym]]
+    print
+    print [table justify [$e get .dynamic]]
+    print
+    print [table justify [$e get .rela.plt]]
     print
     print [table justify [$e get .symtab]]
     print 
