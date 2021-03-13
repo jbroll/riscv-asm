@@ -41,7 +41,11 @@ proc rva-enum { args } {
 }
 
 proc register { name bits reg api } {
-    rva-enum $name $bits "expected register name found" $reg $api
+    if { $::preferApi } {
+        rva-enum $name $bits "expected register name found" $api $reg
+    } else {
+        rva-enum $name $bits "expected register name found" $reg $api
+    }
 
     proc tcl::mathfunc::match_${name} { value } [% { expr { %value in [dict keys %::rva::registers::$name] } }]
 }
@@ -165,26 +169,34 @@ namespace eval ::tcl::mathfunc {
 namespace import ::tcl::mathfunc::msk2
 namespace import ::tcl::mathfunc::exp2
 
+proc prefer { reg } {
+    if { $::preferApi } {
+        return [dict get@ $::reg2api $reg $reg]
+    }
+
+    return [dict get@ $::api2reg $reg $reg]
+}
+
 # Add an alias for the op, allowing defaults in at any arg position
 #
 proc alias { op args } {
     lsplit $args fr to ->
-    set tt [concat {*}[lmap arg $to { expr { $arg in $fr ? "\$$arg" : "$arg" } }]]
+    set to [lassign $to top]
+    set tt [concat {*}[lmap arg $to { expr { $arg in $fr ? "\$$arg" : [prefer "$arg"] } }]]
 
     if { [info procs $op] ne "" } {
         set fr_count [llength $fr]
         shim $op { args } [% {
             if { [llength %args] == $fr_count } {
                 lassign %args $fr
-                tailcall $tt
+                tailcall $top $tt
             }
             shim:next $op {*}%args
         }]
     } else {
-        proc $op {*}[list $fr] "$tt"
+        proc $op {*}[list $fr] "$top $tt"
     }
 
-    set to [lassign $to top]
     set match_to [list "( \$$top eq \"$top\" )"]
     lappend match_to {*}[lmap arg $to { 
         if { $arg in $fr } { continue } 
@@ -208,6 +220,7 @@ lappend ::optable { op mask bits pars vars }
 proc opcode { op args } {
     lsplit $args args mapp ->
     lsplit $args pars Bits :
+
     set bits [fold { apply { { x y } { expr { $x | bits($y) } } } } 0 $Bits]        ; # Reduce bits with bits() function
     set bits [format 0x%08X $bits]                                                  ; # Format as 0x0Hex
     set mask [fold { apply { { x y } { expr { $x | mask($y) } } } } 0 $Bits]        ; # Reduce bits with mask() function
@@ -353,11 +366,14 @@ proc main { args } {
     set match {^rv(32|64)(i|e)?(m)?(a)?(f)?(d)?(q)?(c)?((z[a-z]*)?(_(z[a-z]*))*)((_x[a-z]+)*)$}
 
     set files {}
-    set showtable no
+    set ::preferApi no
+    set   showtable no
     set ::disassemble no
     for { set i 0 } { $i < [llength $args] } { incr i } {
         set arg [lindex $args $i]
         switch $arg {
+            -reg    { set ::preferApi no  }
+            -api    { set ::preferApi yes }
             -t      { set showtable   yes }
             -dc     { set ::disassemble compact }
             -d      { set ::disassemble yes }
