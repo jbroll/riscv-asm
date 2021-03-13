@@ -1,6 +1,6 @@
 # RV64Zfh additions to RV32Zfh
 
-opcode opcode fcvt.l.h  fd rs1 24..20=2 31..27=0x18 rm       26..25=2 6..2=0x14 1..0=3
-opcode opcode fcvt.lu.h fd rs1 24..20=3 31..27=0x18 rm       26..25=2 6..2=0x14 1..0=3
-opcode opcode fcvt.h.l  rd fs1 24..20=2 31..27=0x1A rm       26..25=2 6..2=0x14 1..0=3
-opcode opcode fcvt.h.lu rd fs1 24..20=3 31..27=0x1A rm       26..25=2 6..2=0x14 1..0=3
+opcode opcode fcvt.l.h  fd rs1 rm 24..20=2 31..27=0x18 26..25=2 6..2=0x14 1..0=3
+opcode opcode fcvt.lu.h fd rs1 rm 24..20=3 31..27=0x18 26..25=2 6..2=0x14 1..0=3
+opcode opcode fcvt.h.l  rd fs1 rm 24..20=2 31..27=0x1A 26..25=2 6..2=0x14 1..0=3
+opcode opcode fcvt.h.lu rd fs1 rm 24..20=3 31..27=0x1A 26..25=2 6..2=0x14 1..0=3

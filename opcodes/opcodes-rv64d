@@ -1,12 +1,12 @@
 # RV64D additions to RV32D
 
-opcode fcvt.l.d  rd fs1 24..20=2 31..27=0x18 rm       26..25=1 6..2=0x14 1..0=3
-opcode fcvt.lu.d rd fs1 24..20=3 31..27=0x18 rm       26..25=1 6..2=0x14 1..0=3
+opcode fcvt.l.d  rd fs1 rm : 24..20=2 31..27=0x18 26..25=1 6..2=0x14 1..0=3
+opcode fcvt.lu.d rd fs1 rm : 24..20=3 31..27=0x18 26..25=1 6..2=0x14 1..0=3
 
-opcode fcvt.d.l  fd rs1 24..20=2 31..27=0x1A rm       26..25=1 6..2=0x14 1..0=3
-opcode fcvt.d.lu fd rs1 24..20=3 31..27=0x1A rm       26..25=1 6..2=0x14 1..0=3
+opcode fcvt.d.l  fd rs1 rm : 24..20=2 31..27=0x1A 26..25=1 6..2=0x14 1..0=3
+opcode fcvt.d.lu fd rs1 rm : 24..20=3 31..27=0x1A 26..25=1 6..2=0x14 1..0=3
 
 if { ![iset finx] } {
-    opcode fmv.x.d   rd fs1 24..20=0 31..27=0x1C 14..12=0 26..25=1 6..2=0x14 1..0=3
-    opcode fmv.d.x   fd rs1 24..20=0 31..27=0x1E 14..12=0 26..25=1 6..2=0x14 1..0=3
+    opcode fmv.x.d   rd fs1 : 24..20=0 31..27=0x1C 14..12=0 26..25=1 6..2=0x14 1..0=3
+    opcode fmv.d.x   fd rs1 : 24..20=0 31..27=0x1E 14..12=0 26..25=1 6..2=0x14 1..0=3
 }

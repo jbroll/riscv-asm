@@ -1,32 +1,32 @@
-opcode fadd.q    fd fs1 fs2      31..27=0x00 rm       26..25=3 6..2=0x14 1..0=3
-opcode fsub.q    fd fs1 fs2      31..27=0x01 rm       26..25=3 6..2=0x14 1..0=3
-opcode fmul.q    fd fs1 fs2      31..27=0x02 rm       26..25=3 6..2=0x14 1..0=3
-opcode fdiv.q    fd fs1 fs2      31..27=0x03 rm       26..25=3 6..2=0x14 1..0=3
-opcode fsgnj.q   fd fs1 fs2      31..27=0x04 14..12=0 26..25=3 6..2=0x14 1..0=3
-opcode fsgnjn.q  fd fs1 fs2      31..27=0x04 14..12=1 26..25=3 6..2=0x14 1..0=3
-opcode fsgnjx.q  fd fs1 fs2      31..27=0x04 14..12=2 26..25=3 6..2=0x14 1..0=3
-opcode fmin.q    fd fs1 fs2      31..27=0x05 14..12=0 26..25=3 6..2=0x14 1..0=3
-opcode fmax.q    fd fs1 fs2      31..27=0x05 14..12=1 26..25=3 6..2=0x14 1..0=3
-opcode fcvt.s.q  fd fs1 rm  24..20=3 31..27=0x08          26..25=0 6..2=0x14 1..0=3
-opcode fcvt.q.s  fd fs1     24..20=0 31..27=0x08          26..25=3 6..2=0x14 1..0=3
-opcode fcvt.d.q  fd fs1 rm  24..20=3 31..27=0x08          26..25=1 6..2=0x14 1..0=3
-opcode fcvt.q.d  fd fs1     24..20=1 31..27=0x08          26..25=3 6..2=0x14 1..0=3
-opcode fsqrt.q   fd fs1 rm  24..20=0 31..27=0x0B          26..25=3 6..2=0x14 1..0=3
+opcode fadd.q    fd fs1 fs2 rm      : 31..27=0x00 26..25=3 6..2=0x14 1..0=3
+opcode fsub.q    fd fs1 fs2 rm      : 31..27=0x01 26..25=3 6..2=0x14 1..0=3
+opcode fmul.q    fd fs1 fs2 rm      : 31..27=0x02 26..25=3 6..2=0x14 1..0=3
+opcode fdiv.q    fd fs1 fs2 rm      : 31..27=0x03 26..25=3 6..2=0x14 1..0=3
+opcode fsgnj.q   fd fs1 fs2         : 31..27=0x04 14..12=0 26..25=3 6..2=0x14 1..0=3
+opcode fsgnjn.q  fd fs1 fs2         : 31..27=0x04 14..12=1 26..25=3 6..2=0x14 1..0=3
+opcode fsgnjx.q  fd fs1 fs2         : 31..27=0x04 14..12=2 26..25=3 6..2=0x14 1..0=3
+opcode fmin.q    fd fs1 fs2         : 31..27=0x05 14..12=0 26..25=3 6..2=0x14 1..0=3
+opcode fmax.q    fd fs1 fs2         : 31..27=0x05 14..12=1 26..25=3 6..2=0x14 1..0=3
+opcode fcvt.s.q  fd fs1 rm      : 24..20=3 31..27=0x08          26..25=0 6..2=0x14 1..0=3
+opcode fcvt.q.s  fd fs1         : 24..20=0 31..27=0x08          26..25=3 6..2=0x14 1..0=3
+opcode fcvt.d.q  fd fs1 rm      : 24..20=3 31..27=0x08          26..25=1 6..2=0x14 1..0=3
+opcode fcvt.q.d  fd fs1         : 24..20=1 31..27=0x08          26..25=3 6..2=0x14 1..0=3
+opcode fsqrt.q   fd fs1 rm      : 24..20=0 31..27=0x0B          26..25=3 6..2=0x14 1..0=3
 
-opcode fle.q     rd fs1 fs2      31..27=0x14 14..12=0 26..25=3 6..2=0x14 1..0=3
-opcode flt.q     rd fs1 fs2      31..27=0x14 14..12=1 26..25=3 6..2=0x14 1..0=3
-opcode feq.q     rd fs1 fs2      31..27=0x14 14..12=2 26..25=3 6..2=0x14 1..0=3
+opcode fle.q     rd fs1 fs2         : 31..27=0x14 14..12=0 26..25=3 6..2=0x14 1..0=3
+opcode flt.q     rd fs1 fs2         : 31..27=0x14 14..12=1 26..25=3 6..2=0x14 1..0=3
+opcode feq.q     rd fs1 fs2         : 31..27=0x14 14..12=2 26..25=3 6..2=0x14 1..0=3
 
-opcode fcvt.w.q  rd fs1 rm  24..20=0 31..27=0x18          26..25=3 6..2=0x14 1..0=3
-opcode fcvt.wu.q rd fs1 rm  24..20=1 31..27=0x18          26..25=3 6..2=0x14 1..0=3
-opcode fcvt.q.w  fd rs1     24..20=0 31..27=0x1A          26..25=3 6..2=0x14 1..0=3
-opcode fcvt.q.wu fd rs1     24..20=1 31..27=0x1A          26..25=3 6..2=0x14 1..0=3
-opcode fclass.q  rd fs1     24..20=0 31..27=0x1C 14..12=1 26..25=3 6..2=0x14 1..0=3
+opcode fcvt.w.q  rd fs1 rm      : 24..20=0 31..27=0x18          26..25=3 6..2=0x14 1..0=3
+opcode fcvt.wu.q rd fs1 rm      : 24..20=1 31..27=0x18          26..25=3 6..2=0x14 1..0=3
+opcode fcvt.q.w  fd rs1         : 24..20=0 31..27=0x1A          26..25=3 6..2=0x14 1..0=3
+opcode fcvt.q.wu fd rs1         : 24..20=1 31..27=0x1A          26..25=3 6..2=0x14 1..0=3
+opcode fclass.q  rd fs1         : 24..20=0 31..27=0x1C 14..12=1 26..25=3 6..2=0x14 1..0=3
 
-opcode flq       fd  rs1 limm12  14..12=4 6..2=0x01 1..0=3
-opcode fsq       fs2 rs1 simm12  14..12=4 6..2=0x09 1..0=3
+opcode flq       fd  rs1 limm12     : 14..12=4 6..2=0x01 1..0=3
+opcode fsq       fs2 rs1 simm12     : 14..12=4 6..2=0x09 1..0=3
 
-opcode fmadd.q   fd fs1 fs2 fs3 rm 26..25=3 6..2=0x10 1..0=3
-opcode fmsub.q   fd fs1 fs2 fs3 rm 26..25=3 6..2=0x11 1..0=3
-opcode fnmsub.q  fd fs1 fs2 fs3 rm 26..25=3 6..2=0x12 1..0=3
-opcode fnmadd.q  fd fs1 fs2 fs3 rm 26..25=3 6..2=0x13 1..0=3
+opcode fmadd.q   fd fs1 fs2 fs3 rm  : 26..25=3 6..2=0x10 1..0=3
+opcode fmsub.q   fd fs1 fs2 fs3 rm  : 26..25=3 6..2=0x11 1..0=3
+opcode fnmsub.q  fd fs1 fs2 fs3 rm  : 26..25=3 6..2=0x12 1..0=3
+opcode fnmadd.q  fd fs1 fs2 fs3 rm  : 26..25=3 6..2=0x13 1..0=3

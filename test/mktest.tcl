@@ -41,7 +41,8 @@ proc arg3 { ll } { lindex $ll 2 }
 proc pickreg { $arg } { lindex [set ::$arg] [rand 20] }
 
 proc opcode { op args } {
-    lsplit $args args mapp
+    lsplit $args args mapp ->
+    lsplit $args args bits :
 
     printOp $op {*}$args 
     if { [llength $mapp] } {

@@ -1,23 +1,23 @@
-opcode amoadd.w    rd rs2 rs1      aqrl 31..29=0 28..27=0 14..12=2 6..2=0x0B 1..0=3
-alias amoadd.w    rd rs2 rs1 -> amoadd.w    rd rs2 rs1 x
-opcode amoxor.w    rd rs2 rs1      aqrl 31..29=1 28..27=0 14..12=2 6..2=0x0B 1..0=3
-alias amoxor.w    rd rs2 rs1 -> amoxor.w    rd rs2 rs1 x
-opcode amoor.w     rd rs2 rs1      aqrl 31..29=2 28..27=0 14..12=2 6..2=0x0B 1..0=3
-alias amoor.w    rd rs2 rs1 -> amoor.w    rd rs2 rs1 x
-opcode amoand.w    rd rs2 rs1      aqrl 31..29=3 28..27=0 14..12=2 6..2=0x0B 1..0=3
-alias amoand.w    rd rs2 rs1 -> amoand.w    rd rs2 rs1 x
-opcode amomin.w    rd rs2 rs1      aqrl 31..29=4 28..27=0 14..12=2 6..2=0x0B 1..0=3
-alias amomin.w    rd rs2 rs1 -> amomin.w    rd rs2 rs1 x
-opcode amomax.w    rd rs2 rs1      aqrl 31..29=5 28..27=0 14..12=2 6..2=0x0B 1..0=3
-alias amomax.w    rd rs2 rs1 -> amomax.w    rd rs2 rs1 x
-opcode amominu.w   rd rs2 rs1      aqrl 31..29=6 28..27=0 14..12=2 6..2=0x0B 1..0=3
+opcode amoadd.w    rd rs2 rs1 aqrl          : 31..29=0 28..27=0 14..12=2 6..2=0x0B 1..0=3
+alias amoadd.w     rd rs2 rs1 -> amoadd.w    rd rs2 rs1 x
+opcode amoxor.w    rd rs2 rs1 aqrl          : 31..29=1 28..27=0 14..12=2 6..2=0x0B 1..0=3
+alias amoxor.w     rd rs2 rs1 -> amoxor.w    rd rs2 rs1 x
+opcode amoor.w     rd rs2 rs1 aqrl          : 31..29=2 28..27=0 14..12=2 6..2=0x0B 1..0=3
+alias amoor.w      rd rs2 rs1 -> amoor.w    rd rs2 rs1 x
+opcode amoand.w    rd rs2 rs1 aqrl          : 31..29=3 28..27=0 14..12=2 6..2=0x0B 1..0=3
+alias amoand.w     rd rs2 rs1 -> amoand.w    rd rs2 rs1 x
+opcode amomin.w    rd rs2 rs1 aqrl          : 31..29=4 28..27=0 14..12=2 6..2=0x0B 1..0=3
+alias amomin.w     rd rs2 rs1 -> amomin.w    rd rs2 rs1 x
+opcode amomax.w    rd rs2 rs1 aqrl          : 31..29=5 28..27=0 14..12=2 6..2=0x0B 1..0=3
+alias amomax.w     rd rs2 rs1 -> amomax.w    rd rs2 rs1 x
+opcode amominu.w   rd rs2 rs1 aqrl          : 31..29=6 28..27=0 14..12=2 6..2=0x0B 1..0=3
 alias amominu.w    rd rs2 rs1 -> amominu.w    rd rs2 rs1 x
-opcode amomaxu.w   rd rs2 rs1      aqrl 31..29=7 28..27=0 14..12=2 6..2=0x0B 1..0=3
+opcode amomaxu.w   rd rs2 rs1 aqrl          : 31..29=7 28..27=0 14..12=2 6..2=0x0B 1..0=3
 alias amomaxu.w    rd rs2 rs1 -> amomaxu.w    rd rs2 rs1 x
-opcode amoswap.w   rd rs2 rs1      aqrl 31..29=0 28..27=1 14..12=2 6..2=0x0B 1..0=3
+opcode amoswap.w   rd rs2 rs1 aqrl          : 31..29=0 28..27=1 14..12=2 6..2=0x0B 1..0=3
 alias amoswap.w    rd rs2 rs1 -> amoswap.w    rd rs2 rs1 x
 
-opcode lr.w       rd rs1 24..20=0 aqrl 31..29=0 28..27=2 14..12=2 6..2=0x0B 1..0=3
+opcode lr.w        rd rs1 aqrl  : 24..20=0    31..29=0 28..27=2 14..12=2 6..2=0x0B 1..0=3
 alias lr.w rd rs1 -> lr.w rd rs1 x
-opcode sc.w       rd rs2 rs1      aqrl 31..29=0 28..27=3 14..12=2 6..2=0x0B 1..0=3
+opcode sc.w        rd rs2 rs1 aqrl          : 31..29=0 28..27=3 14..12=2 6..2=0x0B 1..0=3
 alias sc.w rd rs2 rs1 -> sc.w rd rs2 rs1 x

@@ -97,17 +97,23 @@ proc disa_section { elf section } {
             set word [expr { $b3 << 24 | $b2 << 16 | $b1 << 8 | $byte }]
             set disa [disassemble_op4 [format 0x%08x $word]]
             set dargs [lassign $disa dop]
-            print [format %08x $addr] [format %08x $word] "        " [format %-10s $dop] $dargs 
-            incr addr 4
+            set wide 8
+            set skip 4
+            set size 4
         } else {
 
             set data [lassign $data b1]
             set word [expr { $b1 << 8 | $byte }]
             set disa [disassemble_op2 [format 0x%08x $word]]
             set dargs [lassign $disa dop]
-            print [format %08x $addr] [format "%04x    " $word] "        " [format %-10s $dop] $dargs 
-            incr addr 2
+            set wide 4
+            set skip 8
+            set size 2
         }
+
+        print [format "%04x %0-*x %*s     %-8s" $addr $wide $word $skip "" $dop] $dargs 
+
+        incr addr $size
         set data [lassign $data byte]
     }
 }

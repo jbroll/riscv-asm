@@ -110,7 +110,7 @@ proc immediate { name Bits width } {
 
     # Create a function that checks the validity of an immediate.
     # TODO: Check sign/unsigned value and use abs().
-    set size [expr { exp2($hi) }]
+    set size [exp2 $hi]
     proc tcl::mathfunc::match_$name v [% { expr { label(%v) < $size } }]
 }
 
@@ -170,14 +170,15 @@ namespace eval ::tcl::mathfunc {
         expr { $value - (($value & exp2($bits-1)) == 0 ? 0 : exp2($bits)) }
     }
 
-    namespace export msk2
+    namespace export msk2 exp2
 }
 namespace import ::tcl::mathfunc::msk2
+namespace import ::tcl::mathfunc::exp2
 
 # Add an alias for the op, allowing defaults in at any arg position
 #
 proc alias { op args } {
-    lsplit $args fr to
+    lsplit $args fr to ->
     set tt [concat {*}[lmap arg $to { expr { $arg in $fr ? "\$$arg" : "$arg" } }]]
 
     if { [info procs $op] ne "" } {
@@ -215,13 +216,12 @@ proc dis_x2 { word } { return x2 }
 lappend ::optable { op mask bits pars vars }
 
 proc opcode { op args } {
-    lsplit $args args mapp
-    set Bits [pick { apply { x { expr { [string first = $x] != -1 } } } } $args]    ; # Choose the bit def args : x..y=k
+    lsplit $args args mapp ->
+    lsplit $args pars Bits :
     set bits [fold { apply { { x y } { expr { $x | bits($y) } } } } 0 $Bits]        ; # Reduce bits with bits() function
     set bits [format 0x%08X $bits]                                                  ; # Format as 0x0Hex
-    set mask [fold { apply { { x y } { expr { $x | mask($y) } } } } 0 $Bits]        ; # Reduce bits with bits() function
+    set mask [fold { apply { { x y } { expr { $x | mask($y) } } } } 0 $Bits]        ; # Reduce bits with mask() function
     set mask [format 0x%08X $mask]                                                  ; # Format as 0x0Hex
-    set pars [pick { apply { x { expr { [string first = $x] == -1 } } } } $args]    ; # Choose the proper args
     set vars [join [map p $pars { I \$$p }] " "]                                    ; # variable expansion for assemble comment
     set expr [join [list $bits {*}[map p $pars { I "${p}(\$$p)" }]] |]              ; # build bits expression
     foreach arg $pars {
@@ -239,7 +239,7 @@ proc opcode { op args } {
 
     dict set ::opcode $op op   $op                                                 ; # Save some info about op
     dict set ::opcode $op mask $mask
-    dict set ::opcode $op bits $bits                                               ; # Save some info about op
+    dict set ::opcode $op bits $bits
     dict set ::opcode $op pars $pars
     dict set ::opcode $op vars $vars
 
@@ -286,7 +286,7 @@ proc opcode { op args } {
     } 
 
     if { [info procs dis_${mask}_${bits}] != "" } {
-        error "duplicate opcode decodes: $op - $bits"
+        error "duplicate opcode decodes: $op - $mask $bits"
     }
     proc dis_${mask}_${bits} { word } $body
     dict set ::opcode $op disa "dis_${mask}_${bits} \$word"
