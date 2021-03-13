@@ -2,6 +2,7 @@
 #
 set root [file dirname [file normalize [info script]]]
 
+package require jbr::assert
 package require jbr::dict
 package require jbr::func
 package require jbr::list
@@ -10,24 +11,13 @@ package require jbr::shim
 package require jbr::unix
 package require jbr::stack
 package require jbr::string
+package require jbr::template
 
 source $root/elf/elf.tcl
 source $root/rvd.tcl
 
 namespace eval rva {}                   ; # Someday everything will live here
 namespace eval rva::registers {}
-
-proc % { body } {
-    string map { % $ } [uplevel subst -nocommands [list $body]] 
-}
-
-proc assert-eq { a b msg } {
-    set va [uplevel $a]
-    set vb [uplevel $b]
-    if { $va ne $vb } {
-        error "failed assert $va != $vb : $a :: $b ::: $msg"
-    }
-}
 
 set LABEL(.) 0
 
