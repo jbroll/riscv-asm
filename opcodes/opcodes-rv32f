@@ -1,12 +1,12 @@
 
 opcode fadd.s    fd fs1 fs2      31..27=0x00 rm       26..25=0 6..2=0x14 1..0=3
-alias fadd.s -> fadd.s fd fs1 fs2 dyn
+alias fadd.s fd fs1 fs2 -> fadd.s fd fs1 fs2 dyn
 opcode fsub.s    fd fs1 fs2      31..27=0x01 rm       26..25=0 6..2=0x14 1..0=3
-alias fsub.s -> fsub.s fd fs1 fs2 dyn
+alias fsub.s fd fs1 fs2 -> fsub.s fd fs1 fs2 dyn
 opcode fmul.s    fd fs1 fs2      31..27=0x02 rm       26..25=0 6..2=0x14 1..0=3
-alias fmul.s -> fmul.s fd fs1 fs2 dyn
+alias fmul.s fd fs1 fs2 -> fmul.s fd fs1 fs2 dyn
 opcode fdiv.s    fd fs1 fs2      31..27=0x03 rm       26..25=0 6..2=0x14 1..0=3
-alias fdiv.s -> fdiv.s fd fs1 fs2 dyn
+alias fdiv.s fd fs1 fs2 -> fdiv.s fd fs1 fs2 dyn
 opcode fsgnj.s   fd fs1 fs2      31..27=0x04 14..12=0 26..25=0 6..2=0x14 1..0=3
 opcode fsgnjn.s  fd fs1 fs2      31..27=0x04 14..12=1 26..25=0 6..2=0x14 1..0=3
 opcode fsgnjx.s  fd fs1 fs2      31..27=0x04 14..12=2 26..25=0 6..2=0x14 1..0=3

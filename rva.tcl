@@ -32,14 +32,16 @@ proc assert-eq { a b msg } {
 set LABEL(.) 0
 
 proc _enum { func name bits message args } {
-    set ::rva::registers::$name [concat {*}$args]
+    set registers [concat {*}$args]
+    set ::rva::registers::$name $registers
+    set ::rva::registers::${name}_rev [lreverse $registers]
     lassign [regsub -all {[=._]} $bits " "] fr to
 
     proc ::tcl::mathfunc::$name { value } [% { return [expr { ${func}(%value, %::rva::registers::$name, "$message") * exp2($to) }] }]
 
     set mask [msk2 $fr $to]
     proc dis_$name { value } [% {
-        lindex [dict keys %::rva::registers::$name] [expr { ( %value & $mask ) >> $to }]
+        dict get %::rva::registers::${name}_rev [expr { ( %value & $mask ) >> $to }]
     }]
 }
 interp alias {} flag {} _enum flag
@@ -75,7 +77,7 @@ proc immediate { name Bits width } {
             }
         }
         set hi [expr { $lo + $size }]
-        set mask [format 0x%08X [expr { msk2($hi, $lo) }]]
+        set mask [format 0x%08X [expr { msk2($hi-1, $lo) }]]
         set shift [expr { $pos - $lo }]
         set sop [expr { $shift < 0 ? ">>" : "<<" }]
         set dop [expr { $shift > 0 ? ">>" : "<<" }]
@@ -112,6 +114,10 @@ proc immediate { name Bits width } {
     proc tcl::mathfunc::match_$name v [% { expr { label(%v) < $size } }]
 }
 
+proc nbits { word } {
+    expr [join [split [format %b $word] {}] +]
+}
+
 namespace eval ::tcl::mathfunc {
     proc label { value } {
         if { [info exists ::LABEL($value)] } {
@@ -120,7 +126,7 @@ namespace eval ::tcl::mathfunc {
         return $value
     }
 
-    proc msk2 { hi lo } { format 0x%08X [expr { 0xffffffff & ((exp2($hi) - 1) ^ (exp2($lo) - 1)) }] }
+    proc msk2 { hi lo } { format 0x%08X [expr { 0xffffffff & ((exp2($hi+1) - 1) ^ (exp2($lo) - 1)) }] }
     proc exp2 { n } { return [expr { 1 << $n }] }
 
     proc enum { name names message } { 
@@ -149,7 +155,7 @@ namespace eval ::tcl::mathfunc {
     }
     proc mask { bits } {
         lassign [lreverse [regsub -all {[=._]} $bits " "]] b2 n2 n1
-        expr { msk2($n1 eq "" ? $n2 + 1 : $n1 + 1, $n2) }
+        expr { msk2($n1 eq "" ? $n2 : $n1, $n2) }
     }
 
     proc match_x0   rd { expr { $rd eq "x0" || $rd eq "zero" } }
@@ -187,24 +193,18 @@ proc alias { op args } {
         proc $op {*}[list $fr] "$tt"
     }
 
-    # Build and alias table - later in the disassembler this will be 
-    # consulted to unalias ops
-    #
-    #set to [lassign $to top]
-    #if { [dict exists $::opcode $top] } {
-    #    eprint it's an $op -> $top [dict get $::opcode $top disa]
-    #}
-    #set disa [dict get $::opcode $aop disa]
-    #
-    #proc dis_$op { word } [% {
-    #    set disa $disa
-    #    lassign $disa op {*}$pars
-    #
-    #    if { $match } {
-    #        return $op $vars
-    #    }
-    #    return $disa
-    #}
+    set to [lassign $to top]
+    set match_to [list "( \$$top eq \"$top\" )"]
+    lappend match_to {*}[lmap arg $to { 
+        if { $arg in $fr } { continue } 
+        I "match_${arg}(\$$arg)" 
+    }]
+    set match_to [join $match_to " && "]
+    set ff [concat {*}[lmap arg $fr { I "\$$arg" }]]
+
+    dict lappend ::alias $top fr [list [list $op  {*}$ff]]
+    dict lappend ::alias $top to [list [list $top {*}$to]]
+    dict lappend ::alias $top match [list $match_to ]
 }
 
 proc dis_0  { word } { return  0 }
