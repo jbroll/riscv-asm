@@ -14,6 +14,7 @@ package require jbr::string
 package require jbr::template
 
 source $root/elf/elf.tcl
+source $root/compact.tcl
 source $root/decode.tcl
 source $root/rvd.tcl
 
@@ -226,8 +227,8 @@ proc opcode { op args } {
 
     set bits [0x [fold { apply { { x y } { expr { $x | bits($y) } } } } 0 $Bits]]   ; # reduce bits with bits() function
     set mask [0x [fold { apply { { x y } { expr { $x | mask($y) } } } } 0 $Bits]]   ; # reduce bits with mask() function
-    set vars [join [map p $pars { I \$$p }] " "]                                    ; # variable expansion for assemble comment
-    set expr [join [list $bits {*}[map p $pars { I "${p}(\$$p)" }]] |]              ; # build bits expression
+    set vars [join [lmap p $pars { I \$$p }] " "]                                    ; # variable expansion for assemble comment
+    set expr [join [list $bits {*}[lmap p $pars { I "${p}(\$$p)" }]] |]              ; # build bits expression
     foreach arg $pars {
         if { [info procs ::tcl::mathfunc::$arg] == "" } {
             eprint "missing argument type in op $op : $arg"
@@ -249,51 +250,8 @@ proc opcode { op args } {
 
     lappend ::optable [list $op $mask $bits $pars $vars]
 
-    # generate the disassembler for this opcode
-    #
-    set body [join [list list $op {*}[map p $pars { I "\[dis_${p} \$word]" }]] " "]
-
-    if { $mapp ne {} } {                                                            ; # Build a short op map?
-        set mvals [lassign $mapp mop]                                               ; # Split mop and mvals
-        set mpars [dict get $::opcode $mop pars]
-        set mvars [dict get $::opcode $mop vars]
-
-        # Map the passed args from the op to the mop - adding $ expansion.
-        #
-        set vvv  [join [map p [string map [zip $mvals $mpars] $pars] { I "\$$p" }] " "]
-
-        if { [llength $mpars] } {                                                   ; # If there are args
-            # Create an expression to check the validity of the args for mop
-            #
-            set expr [join [map m $mpars p $mvals { concat match_${p}(\$$m) }] " && "]
-            if { [lindex $mvals 0] == [lindex $mvals 1] } {                         ; # Special case arg1 == arg2
-                append expr " && \$[lindex $mpars 0] eq \$[lindex $mpars 1]"
-            }
-        } else {
-            set expr 1 
-        }
-
-        # Shim out the implementation of .mop to check if op is applicable and use that instead
-        #
-        shim .$mop $mpars [% {
-            if { $expr } {
-                return [.$op $vvv]
-            } 
-            return [shim:next .$mop $mvars]
-        }]
-
-        if { $::disassemble ne "compact" } {
-            # generate a disassembler that maps to the mopp code.
-            #
-            set body [join [list list $mop {*}[map p $mvals { I "\[dis_${p} \$word]" }]] " "]
-        }
-    } 
-
-    if { [info procs dis_${mask}_${bits}] != "" } {
-        error "duplicate opcode decodes: $op - $mask $bits"
-    }
-    proc dis_${mask}_${bits} { word } $body
-    dict set ::opcode $op disa "dis_${mask}_${bits} \$word"
+    compact $op $pars $mapp
+    disassembler $op $pars $mask $bits $mapp
 }
 
 proc assemble { opcode instr } {

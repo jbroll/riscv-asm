@@ -1,5 +1,27 @@
 package require pipe
 
+proc disassembler { op pars mask bits mapp } {
+    # generate the disassembler for this opcode
+    #
+    set body [join [list list $op {*}[lmap p $pars { I "\[dis_${p} \$word]" }]] " "]
+
+    if { $mapp ne {} } {                                                            ; # Build a short op map?
+        set mvals [lassign $mapp mop]                                               ; # Split mop and mvals
+
+        if { $::disassemble ne "compact" } {
+            # generate a disassembler that maps to the mopp code.
+            #
+            set body [join [list list $mop {*}[lmap p $mvals { I "\[dis_${p} \$word]" }]] " "]
+        }
+    } 
+
+    if { [info procs dis_${mask}_${bits}] != "" } {
+        error "duplicate opcode decodes: $op - $mask $bits"
+    }
+    proc dis_${mask}_${bits} { word } $body
+    dict set ::opcode $op disa "dis_${mask}_${bits} \$word"
+}
+
 proc disassemble_op { word } {
     if { ($op & 0x00003) == 0x0003 } {
         unalias {*}[decode disa $op $::decode4]
