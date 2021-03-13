@@ -71,7 +71,7 @@ proc immediate { name Bits width } {
             }
         }
         set hi [expr { $lo + $size }]
-        set mask [format 0x%08X [expr { msk2($hi-1, $lo) }]]
+        set mask [0x [expr { msk2($hi-1, $lo) }]]
         set shift [expr { $pos - $lo }]
         set sop [expr { $shift < 0 ? ">>" : "<<" }]
         set dop [expr { $shift > 0 ? ">>" : "<<" }]
@@ -120,7 +120,7 @@ namespace eval ::tcl::mathfunc {
         return $value
     }
 
-    proc msk2 { hi lo } { format 0x%08X [expr { 0xffffffff & ((exp2($hi+1) - 1) ^ (exp2($lo) - 1)) }] }
+    proc msk2 { hi lo } { 0x [expr { 0xffffffff & ((exp2($hi+1) - 1) ^ (exp2($lo) - 1)) }] }
     proc exp2 { n } { return [expr { 1 << $n }] }
 
     proc enum { name names message } { 
@@ -217,14 +217,14 @@ proc dis_x2 { word } { return x2 }
 
 lappend ::optable { op mask bits pars vars }
 
+proc 0x { value { width 8 } } { format 0x%0*X $width $value }
+
 proc opcode { op args } {
     lsplit $args args mapp ->
     lsplit $args pars Bits :
 
-    set bits [fold { apply { { x y } { expr { $x | bits($y) } } } } 0 $Bits]        ; # Reduce bits with bits() function
-    set bits [format 0x%08X $bits]                                                  ; # Format as 0x0Hex
-    set mask [fold { apply { { x y } { expr { $x | mask($y) } } } } 0 $Bits]        ; # Reduce bits with mask() function
-    set mask [format 0x%08X $mask]                                                  ; # Format as 0x0Hex
+    set bits [0x [fold { apply { { x y } { expr { $x | bits($y) } } } } 0 $Bits]]   ; # reduce bits with bits() function
+    set mask [0x [fold { apply { { x y } { expr { $x | mask($y) } } } } 0 $Bits]]   ; # reduce bits with mask() function
     set vars [join [map p $pars { I \$$p }] " "]                                    ; # variable expansion for assemble comment
     set expr [join [list $bits {*}[map p $pars { I "${p}(\$$p)" }]] |]              ; # build bits expression
     foreach arg $pars {
@@ -237,10 +237,10 @@ proc opcode { op args } {
         eprint redefine $op $args
         eprint existing op $op [dict get ::opcode $op]
     }
-    proc .$op $pars "expr { $expr }"                                                ; # A proc to compute the opcode value
-    proc  $op $pars "assemble \[.$op $vars] \"[concat $op {*}$vars]\""              ; # A proc to assmeble the opcode at .
+    proc .$op $pars "expr { $expr }"                                                ; # a proc to compute the opcode value
+    proc  $op $pars "assemble \[.$op $vars] \"[concat $op {*}$vars]\""              ; # a proc to assmeble the opcode at .
 
-    dict set ::opcode $op op   $op                                                 ; # Save some info about op
+    dict set ::opcode $op op   $op                                                  ; # save some info about op
     dict set ::opcode $op mask $mask
     dict set ::opcode $op bits $bits
     dict set ::opcode $op pars $pars
