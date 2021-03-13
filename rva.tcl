@@ -14,6 +14,7 @@ package require jbr::string
 package require jbr::template
 
 source $root/elf/elf.tcl
+source $root/decode.tcl
 source $root/rvd.tcl
 
 namespace eval rva {}                   ; # Someday everything will live here
@@ -450,7 +451,7 @@ proc main { args } {
     include macros.rva
 
     if { $::disassemble ne no } {
-        disassemble_init
+        decode_init
         disassemble {*}$files
         exit
     }
