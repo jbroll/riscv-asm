@@ -74,6 +74,13 @@ proc disa_section { elf section } {
                      table todict |
                      lreverse ~
     }]
+    set dsym [pipe { $elf get .dynsym |
+                     table col ~ st_name st_value |
+                     table todict |
+                     lreverse ~
+    }]
+    lappend syms {*}$dsym
+
     set head [$elf getSectionHeaderByName $section]
     set addr [dict get $head sh_addr]
     set data [$elf getSectionDataByName $section]
@@ -88,13 +95,17 @@ proc disa_section { elf section } {
         if { ($byte & 0x03) == 0x03 } {
             set data [lassign $data b1 b2 b3]
             set word [expr { $b3 << 24 | $b2 << 16 | $b1 << 8 | $byte }]
-            print [format %08x $addr] [format %08x $word] [disassemble_op4 [format 0x%08x $word]] 
+            set disa [disassemble_op4 [format 0x%08x $word]]
+            set dargs [lassign $disa dop]
+            print [format %08x $addr] [format %08x $word] "        " [format %-10s $dop] $dargs 
             incr addr 4
         } else {
 
             set data [lassign $data b1]
             set word [expr { $b1 << 8 | $byte }]
-            print [format %08x $addr] [format "%04x    "  $word] [disassemble_op2 [format 0x%08x $word]]
+            set disa [disassemble_op2 [format 0x%08x $word]]
+            set dargs [lassign $disa dop]
+            print [format %08x $addr] [format "%04x    " $word] "        " [format %-10s $dop] $dargs 
             incr addr 2
         }
         set data [lassign $data byte]
@@ -106,6 +117,7 @@ proc disassemble { args } {
     set file [lindex $args 0]
 
     set e [elf::elf create e $file]
+
 
     disa_section $e .plt
     disa_section $e .text

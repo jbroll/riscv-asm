@@ -38,6 +38,7 @@ opcode srli    rd rs1 shamt6              31..26=0  14..12=5 6..2=0x04 1..0=3   
 opcode srai    rd rs1 shamt6              31..26=16 14..12=5 6..2=0x04 1..0=3       ; # { rd = rs1 >> shamt6 }
 
 opcode add     rd rs1 rs2                 31..25=0  14..12=0 6..2=0x0C 1..0=3       ; # { rd = rs1 + rs2 }
+alias mv rd rs  -> add rd x0 rs
 opcode sub     rd rs1 rs2                 31..25=32 14..12=0 6..2=0x0C 1..0=3       ; # { rd = rs1 + rs2 }
 opcode sll     rd rs1 rs2                 31..25=0  14..12=1 6..2=0x0C 1..0=3
 opcode slt     rd rs1 rs2                 31..25=0  14..12=2 6..2=0x0C 1..0=3
