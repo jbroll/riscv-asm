@@ -3,7 +3,7 @@ namespace eval rva {}                   ; # Someday everything will live here
 namespace eval rva::registers {}
 
 set LABEL(.) 0
-#
+
 # Catch unknown commands in the .rva file and treat them as labels is they end in ':'
 #
 proc unknown { args } {
@@ -23,7 +23,6 @@ proc : { name args } {
         {*}$args
     }
 }
-
 
 proc _enum { func name bits message args } {
     set registers [concat {*}$args]
