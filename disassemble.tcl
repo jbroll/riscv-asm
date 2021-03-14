@@ -18,8 +18,8 @@ proc disassembler { op pars mask bits mapp } {
     if { [info procs dis_${mask}_${bits}] != "" } {
         error "duplicate opcode decodes: $op - $mask $bits"
     }
-    proc dis_${mask}_${bits} { word } $body
-    dict set ::opcode $op disa "dis_${mask}_${bits} \$word"
+    proc disa_${mask}_${bits} { word } $body
+    dict set ::opcode $op disa disa_${mask}_${bits}
 }
 
 proc disassemble_op { word } {
@@ -105,7 +105,6 @@ proc disassemble { args } {
     set file [lindex $args 0]
 
     set e [elf::elf create e $file]
-
 
     disa_section $e .plt
     disa_section $e .text

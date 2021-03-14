@@ -28,7 +28,7 @@ proc decode { type word decode } {
         set bits [0x [expr { $word & $mask }]]                  ; # compute the significant bits in the op
 
         if { [dict exists $opcodes $bits] } {
-            return [eval [dict get $opcodes $bits $type]] 
+            return [[dict get $opcodes $bits $type] $word]
         }
     }
     return  "unknown instruction $word"

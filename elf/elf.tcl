@@ -9,9 +9,6 @@ package require jbr::print
 package require jbr::table
 package require jbr::with
 
-proc % { body } {
-    string map { % $ } [uplevel subst -nocommands [list $body]] 
-}
 
 namespace eval ::elf {
     variable version 1.0.1

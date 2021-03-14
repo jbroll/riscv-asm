@@ -43,6 +43,7 @@ proc pickreg { $arg } { lindex [set ::$arg] [rand 20] }
 proc opcode { op args } {
     lsplit $args args mapp ->
     lsplit $args args bits :
+    lsplit $mapp mapp code |
 
     printOp $op {*}$args 
     if { [llength $mapp] } {
