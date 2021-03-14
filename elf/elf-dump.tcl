@@ -1,6 +1,9 @@
 #!/usr/bin/env tclkit8.6
 #
 set root [file dirname [file normalize [info script]]]
+
+package require jbr::table
+
 source $root/elf.tcl
 
 proc dump { args } {
@@ -20,14 +23,14 @@ proc dump { args } {
     print
     print [table justify [$e get segments]]
     print
-    print [table justify [$e get .dynsym]]
-    print
-    print [table justify [$e get .dynamic]]
-    print
-    print [table justify [$e get .rela.plt]]
-    print
-    print [table justify [$e get .symtab]]
-    print 
+    table foreachrow [$e get sections] {
+        print $sh_name $sh_type
+        set type [string range [string tolower $sh_type] 4 end]
+        if { $type in $::elf::sectionTypes } {
+            print [table justify [$e get $sh_name]]
+        }
+        print
+    }
 }
 
 dump {*}$argv

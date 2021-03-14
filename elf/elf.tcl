@@ -7,6 +7,7 @@ package require jbr::list
 package require jbr::pipe
 package require jbr::print
 package require jbr::table
+package require jbr::template
 package require jbr::with
 
 
@@ -123,6 +124,15 @@ namespace eval ::elf {
     }]
 
     set sectionTypes { symtab dynsym rel rela note dynamic }
+    set sectionPreDecode {
+        dynsym  { set S(.dynstr) [my readStringTable .dynstr] }
+        symtab  { set S(.strtab) [my readStringTable .strtab] }
+        rel     {}
+        rela    {}
+        note    {}
+        dynamic {}
+    }
+
     set sectionDecode {
         dynsym {
             dict import dynsym st_name st_info st_shndx
@@ -203,12 +213,11 @@ namespace eval ::elf {
         dict with elfheader {
             my readSectionHeaders $e_shoff [expr { $e_shnum * $e_shentsize }] $e_shstrndx
             my readSegmentHeaders $e_phoff [expr { $e_phnum * $e_phentsize }] 
-            set S(.strtab)   [my readStringTable .strtab]
-            set S(.dynstr)   [my readStringTable .dynstr]
 
             table foreachrow $S(sections) {
                 set type [string range [string tolower $sh_type] 4 end]
                 if { $type in $::elf::sectionTypes } {
+                    eval [my getSectionPreDecode $type]
                     my readHeaders $sh_name $type $sh_offset $sh_size n_index [my getSectionDecode $type]
                 }
             }
@@ -216,6 +225,14 @@ namespace eval ::elf {
         return $elfheader
     }
 
+    method getSectionPreDecode { type } {
+        my variable my_class
+        if { [dict exists $::elf::sectionPreDecode $type] } {
+            return [dict get $::elf::sectionPreDecode $type]
+        }
+
+        dict get $::elf::sectionPreDecode $my_class-$type
+    }
     method getSectionDecode { type } {
         my variable my_class
         if { [dict exists $::elf::sectionDecode $type] } {
@@ -296,11 +313,11 @@ namespace eval ::elf {
     method readHeaders { type format offset size indexName update } {
         variable S
         set S($type) [my getSectionHeader $format]
-        set here [my seekData $offset]                          ; # Seek to where the section header table is located.
+        set here [my seekData $offset]                                      ; # Seek to where the section header table is located.
         set end [expr { $here + $size }]
 
         upvar $format header
-        for { set i 0 } { $here < $end } { incr i } {                      ; # Read and convert the entire array of section headers.
+        for { set i 0 } { $here < $end } { incr i } {                       ; # Read and convert the entire array of records.
             set header [my scanDataWithFormat $format]
             uplevel $update
     
