@@ -49,6 +49,7 @@ proc main { args } {
 
     set ::preferApi   no
     set showtable     no
+    set showalias     no
     set execute       no
     set ::disassemble no
     set ::unalias     yes
@@ -60,6 +61,7 @@ proc main { args } {
             -reg     { set ::preferApi no  }
             -api     { set ::preferApi yes }
             -t       { set showtable   yes }
+            -a       { set showalias   yes }
             -dc      { set ::disassemble compact }
             -d       { set ::disassemble yes }
             -march   { set March [lindex $args [incr i]] }
@@ -136,6 +138,14 @@ proc main { args } {
 
     include macros.rva
 
+    if { $showtable } {
+        print [table justify $::optable]
+        exit
+    }
+    if { $showalias } {
+        print $::alias
+        exit
+    }
     if { $execute ne no } {
         set ::unalias no
         decode_init
@@ -146,9 +156,6 @@ proc main { args } {
         decode_init
         disassemble {*}$files
         exit
-    }
-    if { $showtable } {
-        print [table justify $::optable]
     }
 
     foreach file $files {

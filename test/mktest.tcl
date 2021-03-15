@@ -38,12 +38,12 @@ proc arg1 { ll } { lindex $ll 0 }
 proc arg2 { ll } { lindex $ll 1 }
 proc arg3 { ll } { lindex $ll 2 }
 
-proc pickreg { $arg } { lindex [set ::$arg] [rand 20] }
-
 proc opcode { op args } {
     lsplit $args args mapp ->
     lsplit $args args bits :
     lsplit $mapp mapp code |
+
+    if { $op eq "unimp" || $op eq "c.unimp" } { return }
 
     printOp $op {*}$args 
     if { [llength $mapp] } {

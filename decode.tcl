@@ -31,7 +31,7 @@ proc decode { type word decode } {
             return [[dict get $opcodes $bits $type] $word]
         }
     }
-    return  "unknown instruction $word"
+    return  unimp
 }
 
 proc decode_op4 { type op } {

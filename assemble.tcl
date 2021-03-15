@@ -33,9 +33,21 @@ proc _enum { func name bits message args } {
     proc ::tcl::mathfunc::$name { value } [% { return [expr { ${func}(%value, %::rva::registers::$name, "$message") * exp2($to) }] }]
 
     set mask [msk2 $fr $to]
-    proc dis_$name { value } [% {
-        dict get %::rva::registers::${name}_rev [expr { ( %value & $mask ) >> $to }]
-    }]
+    if { $func eq "enum" } {
+        proc dis_$name { value } [% {
+            dict get %::rva::registers::${name}_rev [expr { ( %value & $mask ) >> $to }]
+        }]
+    } else {
+        proc dis_$name { value } [% {
+            set flags ""
+            foreach {flag bits} %::rva::registers::$name {
+                if { %value & %bits } {
+                    append flags %flag
+                }
+            }
+            return %flags
+        }]
+    }
 }
 interp alias {} flag {} _enum flag
 
@@ -168,6 +180,7 @@ namespace eval ::tcl::mathfunc {
     proc match_x2   rd { expr { $rd eq "x2" || $rd eq "sp"   } }
     proc match_sp   rd { expr { $rd eq "x2" || $rd eq "sp"   } }
     proc match_0    vx { expr { $vx ==   0 } }
+    proc match_iorw vx { expr { $vx eq "iorw" } }
 
     proc signed { value bits } {
         expr { $value - (($value & exp2($bits-1)) == 0 ? 0 : exp2($bits)) }
@@ -208,17 +221,19 @@ proc alias { op args } {
     }
 
     if { $::unalias } {
-        set match_to [list "( \$$top eq \"$top\" )"]
-        lappend match_to {*}[lmap arg $to { 
-            if { $arg in $fr } { continue } 
-            I "match_${arg}(\$$arg)" 
-        }]
-        set match_to [join $match_to " && "]
+        set match {}
+        set pars  $top
+        foreach n [iota 1 [llength $to]] arg $to {
+            if { $arg in $fr } { 
+                lappend pars $arg
+                continue 
+            }
+            lappend pars $n
+            lappend match "match_${arg}(\$$n)"
+        }
         set ff [concat {*}[lmap arg $fr { I "\$$arg" }]]
 
-        dict lappend ::alias $top fr [list [list $op  {*}$ff]]
-        dict lappend ::alias $top to [list [list $top {*}$to]]
-        dict lappend ::alias $top match [list $match_to ]
+        dict lappend ::alias $top [dict create fr [list $op {*}$ff] pars $pars match [join $match " && "]]
     }
 }
 

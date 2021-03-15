@@ -14,7 +14,7 @@ immediate  clswimm6   5|12..10|6|xx                  8
 immediate  clsdimm6   6..5|12..10|xxx                9
 immediate  cjimm11    12|8|10..9|6|7|2|11|5..3|x    12
 
-opcode c.nop                       : 1..0=1 15..13=0 12=0 11..7=0 6..2=0     ->  nop                          ; # { }
+opcode c.unimp                     : 15..0=0                                 -> unimp
 opcode c.ebreak                    : 1..0=2 15..13=4 12=1 11..7=0 6..2=0     ->  ebreak
 opcode c.addi16sp  nzimm6sp        : 1..0=1 15..13=3      11..7=2            ->  addi   x2    x2 nzimm6sp     ; # { sp += nzimm6sp }
 
@@ -26,7 +26,8 @@ opcode c.sw       crs2c crs1c clswimm6    : 1..0=0 15..13=6                  -> 
 
 # C1 encoding space
 #
-opcode c.addi    rdnz  nzimm6       : 1..0=1 15..13=0                        ->  addi rdnz  rdnz  nzimm6      ; # { rdnz += nzimm6 }
+opcode c.addi    rd    nzimm6       : 1..0=1 15..13=0                        ->  addi rd    rd    nzimm6      ; # { rdnz += nzimm6 }
+alias nop -> addi x0 x0 0
 opcode c.li      rdnz  ciimm6       : 1..0=1 15..13=2                        ->  addi rdnz   x0    ciimm6
 opcode c.lui     rdn2  nzimm6       : 1..0=1 15..13=3                        ->  lui  rdn2       nzimm6
 opcode c.andi    crdhc  cbimm6      : 1..0=1 15..13=4 11..10=2               ->  andi crdhc crdhc cbimm6

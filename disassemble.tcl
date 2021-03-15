@@ -23,12 +23,9 @@ proc disassembler { op pars mask bits mapp } {
 }
 
 proc disassemble_op { word } {
-    if { ($op & 0x00003) == 0x0003 } {
+    if { ($op & 0x00003) == 0x0003 || ![iset c]} {
         unalias {*}[decode disa $op $::decode4]
     } else {
-        if { ![iset c] } {
-            error "compact instructions not enabled : $op"
-        } 
         unalias {*}[decode disa $op $::decode2]
     }
 }
@@ -36,32 +33,27 @@ proc unalias { args } {
     set disa $args
     set dop [lindex $disa 0]
     while { [dict exists $::alias $dop] } {
-        set dxx [dict get $::alias $dop]
-        foreach fr [dict get $dxx fr] to [dict get $dxx to] match [dict get $dxx match] {
-            lassign $disa {*}$to
+        set aliases [dict get $::alias $dop]
+        foreach alias $aliases {
+            dict import alias
+            lassign $disa {*}$pars
+
             if $match {
                 set disa [eval list {*}$fr]
+                if { $dop ne [lindex $disa 0] } {
+                    set dop [lindex $disa 0]
+                    break 
+                }
             }
         }
         if { $dop eq [lindex $disa 0] } { break }
-        set dop [lindex $disa 0]
     }
     return $disa
 }
 
 proc disa_section { elf section } {
-    set syms [pipe { $elf get .symtab | 
-                     table row ~ section section { $st_name != "" && $st_shnm == $section } |
-                     table col ~ st_name st_value |
-                     table todict |
-                     lreverse ~
-    }]
-    set dsym [pipe { $elf get .dynsym |
-                     table col ~ st_name st_value |
-                     table todict |
-                     lreverse ~
-    }]
-    lappend syms {*}$dsym
+
+    set syms [load_syms $elf $section]
 
     set head [$elf getSectionHeaderByName $section]
     set addr [dict get $head sh_addr]
@@ -74,7 +66,7 @@ proc disa_section { elf section } {
             print
             print "        " [dict get $syms $addr] :
         }
-        if { ($byte & 0x03) == 0x03 } {
+        if { ($byte & 0x03) == 0x03 || ![iset c] } {
             set data [lassign $data b1 b2 b3]
             set word [expr { $b3 << 24 | $b2 << 16 | $b1 << 8 | $byte }]
             set disa [decode_op4 disa [0x $word]]
@@ -83,7 +75,6 @@ proc disa_section { elf section } {
             set skip 4
             set size 4
         } else {
-
             set data [lassign $data b1]
             set word [expr { $b1 << 8 | $byte }]
             set disa [decode_op2 disa [0x $word]]
@@ -100,12 +91,40 @@ proc disa_section { elf section } {
     }
 }
 
+proc load_syms { elf section } {
+    set syms {}
+    try {
+        set syms [pipe { $elf get .symtab | 
+                     table row ~ section section { $st_name != "" && $st_shnm == $section } |
+                     table col ~ st_name st_value |
+                     table todict |
+                     lreverse ~
+        }]
+    } on error e { eprint $e}
+    try {
+        set dsym [pipe { $elf get .dynsym |
+                         table col ~ st_name st_value |
+                         table todict |
+                         lreverse ~
+        }]
+        lappend syms {*}$dsym
+        print $row
+    } on error e {}
+
+    return $syms
+}
+
 proc disassemble { args } {
 
     set file [lindex $args 0]
 
     set e [elf::elf create e $file]
 
-    disa_section $e .plt
-    disa_section $e .text
+    table foreachrow [$e get sections] {
+        if { $sh_type eq "SHT_PROGBITS" && ($sh_flags & 4)} {
+            print $sh_name $sh_type
+            disa_section $e $sh_name 
+            print
+        }
+    }
 }
