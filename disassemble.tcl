@@ -41,12 +41,12 @@ proc unalias { args } {
             if $match {
                 set disa [eval list {*}$fr]
                 if { $dop ne [lindex $disa 0] } {
-                    set dop [lindex $disa 0]
                     break 
                 }
             }
         }
         if { $dop eq [lindex $disa 0] } { break }
+        set dop [lindex $disa 0]
     }
     return $disa
 }
@@ -58,25 +58,27 @@ proc disa_section { elf section } {
     set head [$elf getSectionHeaderByName $section]
     set addr [dict get $head sh_addr]
     set data [$elf getSectionDataByName $section]
-    binary scan $data cu* data
-    set data [lassign $data byte]
-    while { [llength $data] } {
+    set here 0
+
+    while { $here < [string length $data] } {
+        binary scan $data @${here}i word
+
+
         set symbol ""
         if { [dict exists $syms $addr] } {
             print
             print "        " [dict get $syms $addr] :
         }
-        if { ($byte & 0x03) == 0x03 || ![iset c] } {
-            set data [lassign $data b1 b2 b3]
-            set word [expr { $b3 << 24 | $b2 << 16 | $b1 << 8 | $byte }]
+        if { ($word & 0x03) == 0x03 || ![iset c] } {
+            set word [expr { $word & 0xFFFFFFFF }]
+
             set disa [decode_op4 disa [0x $word]]
             set dargs [lassign $disa dop]
             set wide 8
             set skip 4
             set size 4
         } else {
-            set data [lassign $data b1]
-            set word [expr { $b1 << 8 | $byte }]
+            set word [expr { $word & 0x0000FFFF }]
             set disa [decode_op2 disa [0x $word]]
             set dargs [lassign $disa dop]
             set wide 4
@@ -87,7 +89,7 @@ proc disa_section { elf section } {
         print [format "%04x %0-*x %*s     %-8s" $addr $wide $word $skip "" $dop] $dargs 
 
         incr addr $size
-        set data [lassign $data byte]
+        incr here $size
     }
 }
 
