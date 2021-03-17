@@ -1,6 +1,6 @@
 package require pipe
 
-proc disassembler { op pars mask bits mapp } {
+proc disassembler { op mask bits mapp pars } {
     # generate the disassembler for this opcode
     #
     set body [join [list list $op {*}[lmap p $pars { I "\[dis_${p} \$word]" }]] " "]
@@ -51,6 +51,29 @@ proc unalias { args } {
     return $disa
 }
 
+proc load_syms { elf section } {
+    set syms {}
+    try {
+        set syms [pipe { $elf get .symtab | 
+                     table row ~ section section { $st_name != "" && $st_shnm == $section } |
+                     table col ~ st_name st_value |
+                     table todict |
+                     lreverse ~
+        }]
+    } on error e { eprint $e}
+    try {
+        set dsym [pipe { $elf get .dynsym |
+                         table col ~ st_name st_value |
+                         table todict |
+                         lreverse ~
+        }]
+        lappend syms {*}$dsym
+        print $row
+    } on error e {}
+
+    return $syms
+}
+
 proc disa_section { elf section } {
 
     set syms [load_syms $elf $section]
@@ -91,29 +114,6 @@ proc disa_section { elf section } {
         incr addr $size
         incr here $size
     }
-}
-
-proc load_syms { elf section } {
-    set syms {}
-    try {
-        set syms [pipe { $elf get .symtab | 
-                     table row ~ section section { $st_name != "" && $st_shnm == $section } |
-                     table col ~ st_name st_value |
-                     table todict |
-                     lreverse ~
-        }]
-    } on error e { eprint $e}
-    try {
-        set dsym [pipe { $elf get .dynsym |
-                         table col ~ st_name st_value |
-                         table todict |
-                         lreverse ~
-        }]
-        lappend syms {*}$dsym
-        print $row
-    } on error e {}
-
-    return $syms
 }
 
 proc disassemble { args } {

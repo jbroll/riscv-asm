@@ -1,33 +1,43 @@
 package require jbr::with
 
-proc pseudo2tcl { code } {
-    return "eprint $code"
-}
-proc execution { op mapp mask bits } {
+source $root/cexpr2tcl.tcl
 
-    if { ($bits & 0x03) == 0x03 } {
-        set decode decode4
-        set size 4
-    } else {
-        set decode decode2
-        set size 2
+proc execut_init {} {
+    set ::reg-regexp \\m([join $::rclasses |])\\M
+    set ::imm-regexp \\m([join $::iclasses |])\\M
+    set ::pcx-regexp \\m(pc)\\M
+
+    upvar ::R R
+    set R(pc) 0
+    foreach reg $::regNames {
+        set R($reg) 0
     }
 
-    if { $mapp ne {} } {
-        set mop [lindex $mapp 0]
-        set code [dict get $::opcode $mop code]
-    } else {
-        set code [dict get $::opcode $op code]
-    }
-        
-    proc exec_${mask}_${bits} { word } [% {
-        set disa [[dict get %::$decode $mask $bits disa] %word]
-        lassign %disa $mapp
+    dict for {op opcode} $::opcode {
+        dict with opcode {
+            if { $mapp eq {} } {
+                set Code $code
+                set Pars $pars
+            } else {
+                set mop [lindex $mapp 0]                    ; # For compact opcodes that map to another instruction. 
+                set Code [dict get $::opcode $mop code]
+                set Pars [dict get $::opcode $mop pars]
+            }
 
-        [!pseudo2tcl $code]
-        incr ::pc $size
-    }]
-    dict set ::opcode $op exec exec_${mask}_${bits}
+            set Code [cexpr2tcl [join $Code]]
+            set decode decode$size
+
+            proc exec_${mask}_${bits} { word } [% {
+                upvar ::R R
+                set disa [[dict get %::$decode $mask $bits disa] %word]
+                eprint %disa :: {$Code}
+                lassign %disa op $Pars
+
+                $Code
+            }]
+            dict set ::opcode $op exec exec_${mask}_${bits}
+        }
+    }
 }
 
 proc load { fname } {
@@ -57,19 +67,20 @@ proc execute { args } {
     set file [lindex $args 0]
     set text [load $file]
 
-    set ::pc 0
-    upvar ::pc pc
+    set ::R(pc) 0
 
-    binary scan $text @${pc}cu byte
-    while { $::pc < [string length $text] } {
-        if { ($byte & 0x03) == 0x03 } {
-            binary scan $text @${pc}i word
+    while { $::R(pc) < [string length $text] } {
+        binary scan $text @${::R(pc)}i word
+
+        if { ($word & 0x03) == 0x03 || ![iset c] } {
+            eprint [array get ::R *]
+            set word [expr { $word & 0xFFFFFFFF }]
             decode_op4 exec [0x $word]
+            incr ::R(pc) 4
         } else {
-            binary scan $text @${pc}i word
+            set word [expr { $word & 0x0000FFFF }]
             decode_op2 exec [0x $word]
+            incr ::R(pc) 2
         }
-        binary scan $text @${pc}cu byte
     }
 }
-

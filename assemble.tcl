@@ -62,6 +62,8 @@ proc reg-names { names } {
 }
 
 proc register { name bits reg api } {
+    lappend ::rclasses $name
+
     if { $::preferApi } {
         rva-enum $name $bits "expected register name found" $api $reg
     } else {
@@ -72,6 +74,8 @@ proc register { name bits reg api } {
 }
 
 proc immediate { name Bits width } {
+    lappend ::iclasses $name
+
     set bits [lreverse [split $Bits |]]
     set lo 0
     foreach bit $bits {
@@ -272,12 +276,13 @@ proc opcode { op args } {
     dict set ::opcode $op pars $pars
     dict set ::opcode $op vars $vars
     dict set ::opcode $op code $code
+    dict set ::opcode $op mapp $mapp
+    dict set ::opcode $op size [expr { ( $bits & 0x03 ) == 0x3 ? 4 : 2 }]
 
     lappend ::optable [list $op $mask $bits $pars $vars]
 
-    compact      $op $pars $mapp
-    execution    $op $mapp $mask $bits
-    disassembler $op $pars $mask $bits $mapp
+    compact      $op $mask $bits $mapp $pars
+    disassembler $op $mask $bits $mapp $pars
 }
 
 proc assemble { opcode instr } {

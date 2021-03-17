@@ -1,5 +1,5 @@
 
-proc compact { op pars mapp } {
+proc compact { op mask bits mapp pars } {
     if { $mapp eq {} } { return }                                               ; # Build a short op map?
 
     set mvals [lassign $mapp mop]                                               ; # Split mop and mvals

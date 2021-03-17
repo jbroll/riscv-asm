@@ -146,8 +146,9 @@ proc main { args } {
         print $::alias
         exit
     }
-    if { $execute ne no } {
+    if { $execute eq yes } {
         set ::unalias no
+        execut_init
         decode_init
         execute {*}$files
         exit
