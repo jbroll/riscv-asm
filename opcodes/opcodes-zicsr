@@ -1,23 +1,141 @@
 # Zicsr
-opcode csrrw       rd  rs1    limm12       : 14..12=1 6..2=0x1C 1..0=3
-opcode csrrs       rd  rs1    limm12       : 14..12=2 6..2=0x1C 1..0=3
-opcode csrrc       rd  rs1    limm12       : 14..12=3 6..2=0x1C 1..0=3
-opcode csrrwi      rd  uimm5  limm12       : 14..12=5 6..2=0x1C 1..0=3
-opcode csrrsi      rd  uimm5  limm12       : 14..12=6 6..2=0x1C 1..0=3
-opcode csrrci      rd  uimm5  limm12       : 14..12=7 6..2=0x1C 1..0=3
+
+rva-enum csr 31..20 "expected control or status register" {
+    ustatus       	0x000
+    uie           	0x004
+    utvec         	0x005
+    uscratch      	0x040
+    uepc          	0x041
+    ucause        	0x042
+    utval         	0x043
+    uip           	0x044
+    fflags        	0x001
+    frm           	0x002
+    fcsr          	0x003
+    cycle         	0xC00
+    time          	0xC01
+    instret       	0xC02
+    hpmcounter3   	0xC03
+    hpmcounter4   	0xC04
+    hpmcounter31  	0xC1F
+    cycleh        	0xC80
+    timeh         	0xC81
+    instreth      	0xC82
+    hpmcounter3h  	0xC83
+    hpmcounter4h  	0xC84
+    hpmcounter31h 	0xC9F
+    sstatus       	0x100
+    sedeleg       	0x102
+    sideleg       	0x103
+    sie           	0x104
+    stvec         	0x105
+    scounteren    	0x106
+    sscratch      	0x140
+    sepc          	0x141
+    scause        	0x142
+    stval         	0x143
+    sip           	0x144
+    satp          	0x180
+    scontext      	0x5A8
+    hstatus       	0x600
+    hedeleg       	0x602
+    hideleg       	0x603
+    hie           	0x604
+    hcounteren    	0x606
+    hgeie         	0x607
+    htval         	0x643
+    hip           	0x644
+    hvip          	0x645
+    htinst        	0x64A
+    hgeip         	0xE12
+    hgatp         	0x680
+    hcontext      	0x6A8
+    htimedelta    	0x605
+    htimedeltah   	0x615
+    vsstatus      	0x200
+    vsie          	0x204
+    vstvec        	0x205
+    vsscratch     	0x240
+    vsepc         	0x241
+    vscause       	0x242
+    vstval        	0x243
+    vsip          	0x244
+    vsatp         	0x280
+    mvendorid     	0xF11
+    marchid       	0xF12
+    mimpid        	0xF13
+    mhartid       	0xF14
+    mstatus       	0x300
+    misa          	0x301
+    medeleg       	0x302
+    mideleg       	0x303
+    mie           	0x304
+    mtvec         	0x305
+    mcounteren    	0x306
+    mstatush      	0x310
+    mscratch      	0x340
+    mepc          	0x341
+    mcause        	0x342
+    mtval         	0x343
+    mip           	0x344
+    mtinst        	0x34A
+    mtval2        	0x34B
+    pmpcfg0       	0x3A0
+    pmpcfg1       	0x3A1
+    pmpcfg2       	0x3A2
+    pmpcfg3       	0x3A3
+    pmpcfg14      	0x3AE
+    pmpcfg15      	0x3AF
+    pmpaddr0      	0x3B0
+    pmpaddr1      	0x3B1
+    pmpaddr63     	0x3EF
+    mcycle        	0xB00
+    minstret      	0xB02
+    mhpmcounter3  	0xB03
+    mhpmcounter4  	0xB04
+    mhpmcounter31 	0xB1F
+    mcycleh       	0xB80
+    minstreth     	0xB82
+    mhpmcounter3h 	0xB83
+    mhpmcounter4h 	0xB84
+    mhpmcounter31h	0xB9F
+    mcountinhibit 	0x320
+    mhpmevent3    	0x323
+    mhpmevent4    	0x324
+    mhpmevent31   	0x33F
+    tselect       	0x7A0
+    tdata1        	0x7A1
+    tdata2        	0x7A2
+    tdata3        	0x7A3
+    mcontext      	0x7A8
+    dcsr          	0x7B0
+    dpc           	0x7B1
+    dscratch0     	0x7B2
+    dscratch1     	0x7B3
+}
+
+opcode csrrw       rd  rs1    csr                   : 14..12=1 6..2=0x1C 1..0=3
+opcode csrrs       rd  rs1    csr                   : 14..12=2 6..2=0x1C 1..0=3
+opcode csrrc       rd  rs1    csr                   : 14..12=3 6..2=0x1C 1..0=3
+opcode csrrwi      rd  uimm5  csr                   : 14..12=5 6..2=0x1C 1..0=3
+opcode csrrsi      rd  uimm5  csr                   : 14..12=6 6..2=0x1C 1..0=3
+opcode csrrci      rd  uimm5  csr                   : 14..12=7 6..2=0x1C 1..0=3
 
 # pseudo-instructions that map to csr*
-opcode frflags    rd          : 19..15=0 31..20=0x001 14..12=2 6..2=0x1C 1..0=3
-opcode fsflags    rd rs1      : 31..20=0x001 14..12=1 6..2=0x1C 1..0=3
-opcode fsflagsi   rd uimm5    : 31..20=0x001 14..12=5 6..2=0x1C 1..0=3
-opcode frrm       rd          : 19..15=0 31..20=0x002 14..12=2 6..2=0x1C 1..0=3
-opcode fsrm       rd rs1      : 31..20=0x002 14..12=1 6..2=0x1C 1..0=3
-opcode fsrmi      rd uimm5    : 31..20=0x002 14..12=5 6..2=0x1C 1..0=3
-opcode fscsr      rd rs1      : 31..20=0x003 14..12=1 6..2=0x1C 1..0=3
-opcode frcsr      rd            : 19..15=0 31..20=0x003 14..12=2 6..2=0x1C 1..0=3
-opcode rdcycle    rd            : 19..15=0 31..20=0xC00 14..12=2 6..2=0x1C 1..0=3
-opcode rdtime     rd            : 19..15=0 31..20=0xC01 14..12=2 6..2=0x1C 1..0=3
-opcode rdinstret  rd            : 19..15=0 31..20=0xC02 14..12=2 6..2=0x1C 1..0=3
-opcode rdcycleh   rd            : 19..15=0 31..20=0xC80 14..12=2 6..2=0x1C 1..0=3
-opcode rdtimeh    rd            : 19..15=0 31..20=0xC81 14..12=2 6..2=0x1C 1..0=3
-opcode rdinstreth rd            : 19..15=0 31..20=0xC82 14..12=2 6..2=0x1C 1..0=3
+opcode frflags    rd          : 31..20=0x001 19..15=0 14..12=2 6..2=0x1C 1..0=3
+opcode frrm       rd          : 31..20=0x002 19..15=0 14..12=2 6..2=0x1C 1..0=3
+opcode frcsr      rd          : 31..20=0x003 19..15=0 14..12=2 6..2=0x1C 1..0=3
+
+opcode fsflags    rd rs1      : 31..20=0x001          14..12=1 6..2=0x1C 1..0=3
+opcode fsflagsi   rd uimm5    : 31..20=0x001          14..12=5 6..2=0x1C 1..0=3
+opcode fsrm       rd rs1      : 31..20=0x002          14..12=1 6..2=0x1C 1..0=3
+opcode fsrmi      rd uimm5    : 31..20=0x002          14..12=5 6..2=0x1C 1..0=3
+opcode fscsr      rd rs1      : 31..20=0x003          14..12=1 6..2=0x1C 1..0=3
+
+opcode rdcycle    rd          : 31..20=0xC00 19..15=0 14..12=2 6..2=0x1C 1..0=3
+opcode rdtime     rd          : 31..20=0xC01 19..15=0 14..12=2 6..2=0x1C 1..0=3
+opcode rdinstret  rd          : 31..20=0xC02 19..15=0 14..12=2 6..2=0x1C 1..0=3
+opcode rdcycleh   rd          : 31..20=0xC80 19..15=0 14..12=2 6..2=0x1C 1..0=3
+opcode rdtimeh    rd          : 31..20=0xC81 19..15=0 14..12=2 6..2=0x1C 1..0=3
+opcode rdinstreth rd          : 31..20=0xC82 19..15=0 14..12=2 6..2=0x1C 1..0=3
+

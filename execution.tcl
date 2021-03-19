@@ -1,6 +1,19 @@
 package require jbr::with
+package require jbr::term
 
 source $root/cexpr2tcl.tcl
+
+namespace eval ::tcl::mathfunc {
+    proc ld_sbyte { addr } { return 0 }
+    proc ld_shalf { addr } { return 0 }
+    proc ld_sword { addr } { return 0 }
+    proc ld_ubyte { addr } { return 0 }
+    proc ld_uhalf { addr } { return 0 }
+
+    proc st_byte { value addr } { return 0 }
+    proc st_half { value addr } { return 0 }
+    proc st_word { value addr } { return 0 }
+}
 
 proc execut_init {} {
     set ::reg-regexp \\m([join $::rclasses |])\\M
@@ -30,7 +43,6 @@ proc execut_init {} {
             proc exec_${mask}_${bits} { word } [% {
                 upvar ::R R
                 set disa [[dict get %::$decode $mask $bits disa] %word]
-                eprint %disa :: {$Code}
                 lassign %disa op $Pars
 
                 $Code
@@ -59,21 +71,25 @@ proc load { fname } {
             return $data
         }
         .bin {}
-        .elf {}
+        .elf -
+        default {
+
+        }
     }
 }
 
-proc execute { args } {
+proc execute { verbose args } {
     set file [lindex $args 0]
     set text [load $file]
 
     set ::R(pc) 0
+    set next 0
+    set prev [clock micro]
 
-    while { $::R(pc) < [string length $text] } {
+    while { $::R(pc) < [string length $text] && $::R(pc) >= 0 } {
         binary scan $text @${::R(pc)}i word
 
         if { ($word & 0x03) == 0x03 || ![iset c] } {
-            eprint [array get ::R *]
             set word [expr { $word & 0xFFFFFFFF }]
             decode_op4 exec [0x $word]
             incr ::R(pc) 4
@@ -82,5 +98,15 @@ proc execute { args } {
             decode_op2 exec [0x $word]
             incr ::R(pc) 2
         }
+
+        set cycle [expr [clock micro] - $prev]
+        set prev [clock micro]
+        if { $verbose && $next < [clock milliseconds] } {  
+            term clear
+            puts -nonewline "cycle: [format %4s $cycle]"
+            print [join [lsort [lmap { name value } [array get ::R *] { format "% 4s:  %s" $name $value }]] "\n"]
+            set next [expr [clock milliseconds] + 100]
+        }
+
     }
 }

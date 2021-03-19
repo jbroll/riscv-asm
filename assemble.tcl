@@ -26,8 +26,8 @@ proc : { name args } {
 
 proc _enum { func name bits message args } {
     set registers [concat {*}$args]
-    set ::rva::registers::$name $registers
-    set ::rva::registers::${name}_rev [lreverse $registers]
+    set ::rva::registers::$name [lmap x $registers { expr { [string first 0x $x] == 0 ? $x : [I $x] } }]
+    set ::rva::registers::${name}_rev [lreverse [set ::rva::registers::$name]]
     lassign [regsub -all {[=._]} $bits " "] fr to
 
     proc ::tcl::mathfunc::$name { value } [% { return [expr { ${func}(%value, %::rva::registers::$name, "$message") * exp2($to) }] }]
@@ -35,7 +35,12 @@ proc _enum { func name bits message args } {
     set mask [msk2 $fr $to]
     if { $func eq "enum" } {
         proc dis_$name { value } [% {
-            dict get %::rva::registers::${name}_rev [expr { ( %value & $mask ) >> $to }]
+            try {
+                dict get %::rva::registers::${name}_rev [expr { ( %value & $mask ) >> $to }]
+            } on error e {
+                print %e : %::rva::registers::${name}_rev
+                exit
+            }
         }]
     } else {
         proc dis_$name { value } [% {

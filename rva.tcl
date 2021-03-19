@@ -51,6 +51,7 @@ proc main { args } {
     set showtable     no
     set showalias     no
     set execute       no
+    set verbose       no
     set ::disassemble no
     set ::unalias     yes
 
@@ -66,6 +67,7 @@ proc main { args } {
             -d       { set ::disassemble yes }
             -march   { set March [lindex $args [incr i]] }
             -unalias { set ::unalias no }
+            -v       { set verbose yes  }
             -x       { set execute yes  }
             default  { lappend files $arg }
         }
@@ -150,7 +152,7 @@ proc main { args } {
         set ::unalias no
         execut_init
         decode_init
-        execute {*}$files
+        execute $verbose {*}$files
         exit
     }
     if { $::disassemble ne no } {
