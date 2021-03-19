@@ -269,7 +269,7 @@ namespace eval ::elf {
         my readDataAt $offset $size
     }
     method getSectionDataByIndex { index } { my getSectionData [my getSectionHeaderByIndex $index] sh_offset sh_size   }
-    method getSegmentDataByIndex { index } { my getSectionData [my getSectionHeaderByIndex $index]  p_offset  p_filesz }
+    method getSegmentDataByIndex { index } { my getSectionData [my getSegmentHeaderByIndex $index]  p_offset  p_filesz }
     method getSectionDataByName  { name  } { my getSectionData [my getSectionHeaderByName $name]   sh_offset sh_size   }
 
     method readElfHeader {} {

@@ -1,6 +1,6 @@
 # Zicsr
 
-rva-enum csr 31..20 "expected control or status register" {
+rva-control csr 31..20 "expected control or status register" {
     ustatus       	0x000
     uie           	0x004
     utvec         	0x005
@@ -114,12 +114,12 @@ rva-enum csr 31..20 "expected control or status register" {
     dscratch1     	0x7B3
 }
 
-opcode csrrw       rd  rs1    csr                   : 14..12=1 6..2=0x1C 1..0=3
-opcode csrrs       rd  rs1    csr                   : 14..12=2 6..2=0x1C 1..0=3
-opcode csrrc       rd  rs1    csr                   : 14..12=3 6..2=0x1C 1..0=3
-opcode csrrwi      rd  uimm5  csr                   : 14..12=5 6..2=0x1C 1..0=3
-opcode csrrsi      rd  uimm5  csr                   : 14..12=6 6..2=0x1C 1..0=3
-opcode csrrci      rd  uimm5  csr                   : 14..12=7 6..2=0x1C 1..0=3
+opcode csrrw       rd  rs1    csr                   : 14..12=1 6..2=0x1C 1..0=3     -> | { rd = csr ; csr = rs1 }
+opcode csrrs       rd  rs1    csr                   : 14..12=2 6..2=0x1C 1..0=3     -> | { rd = csr ; csr = csr | rs1 }
+opcode csrrc       rd  rs1    csr                   : 14..12=3 6..2=0x1C 1..0=3     -> | { rd = csr ; csr = csr & ~rs1 }
+opcode csrrwi      rd  uimm5  csr                   : 14..12=5 6..2=0x1C 1..0=3     -> | { rd = csr ; csr = uimm5 }
+opcode csrrsi      rd  uimm5  csr                   : 14..12=6 6..2=0x1C 1..0=3     -> | { rd = csr ; csr = csr | uimm5 }
+opcode csrrci      rd  uimm5  csr                   : 14..12=7 6..2=0x1C 1..0=3     -> | { rd = csr ; csr = csr & ~uimm5 }
 
 # pseudo-instructions that map to csr*
 opcode frflags    rd          : 31..20=0x001 19..15=0 14..12=2 6..2=0x1C 1..0=3

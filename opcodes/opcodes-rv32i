@@ -30,7 +30,7 @@ opcode nop               : 11..7=0 19..15=0 31..20=0  14..12=0 6..2=0x04 1..0=3 
 opcode addi    rd rs1 aimm12                        : 14..12=0 6..2=0x04 1..0=3       -> | { rd = rs1 + aimm12 }
 alias li rd aimm12 -> addi rd x0 aimm12
 alias nop -> addi x0 x0 0
-opcode slli    rd rs1 shamt6              : 31..26=0  14..12=1 6..2=0x04 1..0=3
+opcode slli    rd rs1 shamt6              : 31..26=0  14..12=1 6..2=0x04 1..0=3       -> | { rd = rs1 << shamt6 }
 opcode slti    rd rs1 aimm12                        : 14..12=2 6..2=0x04 1..0=3
 opcode sltiu   rd rs1 aimm12                        : 14..12=3 6..2=0x04 1..0=3
 opcode xori    rd rs1 aimm12                        : 14..12=4 6..2=0x04 1..0=3       -> | { rd = rs1 ^ aimm12 }
@@ -66,12 +66,12 @@ opcode fence   pred succ                  : 31..28=0  19..15=0 14..12=0 11..7=0 
 alias fence -> fence iorw iorw
 opcode fence.tso                          : 31..28=8  27..24=3 23..20=3 19..15=0 14..12=0 11..7=0 6..2=0x03 1..0=3  -> | { }
 
-opcode ecall             : 11..7=0 19..15=0 31..20=0x000 14..12=0 6..2=0x1C 1..0=3
+opcode ecall             : 11..7=0 19..15=0 31..20=0x000 14..12=0 6..2=0x1C 1..0=3    -> | { print ECALL }
 opcode ebreak            : 11..7=0 19..15=0 31..20=0x001 14..12=0 6..2=0x1C 1..0=3
 
 opcode uret              : 11..7=0 19..15=0 31..20=0x002 14..12=0 6..2=0x1C 1..0=3
 opcode sret              : 11..7=0 19..15=0 31..20=0x102 14..12=0 6..2=0x1C 1..0=3
-opcode mret              : 11..7=0 19..15=0 31..20=0x302 14..12=0 6..2=0x1C 1..0=3
+opcode mret              : 11..7=0 19..15=0 31..20=0x302 14..12=0 6..2=0x1C 1..0=3 -> | { pc = mepc }
 opcode dret              : 11..7=0 19..15=0 31..20=0x7b2 14..12=0 6..2=0x1C 1..0=3
 opcode sfence.vma rs1 rs2 : 11..7=0         31..25=0x09  14..12=0 6..2=0x1C 1..0=3
 opcode wfi               : 11..7=0 19..15=0 31..20=0x105 14..12=0 6..2=0x1C 1..0=3

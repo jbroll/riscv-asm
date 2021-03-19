@@ -56,8 +56,13 @@ proc _enum { func name bits message args } {
 }
 interp alias {} flag {} _enum flag
 
-proc rva-enum { args } {
-    _enum enum {*}$args
+proc rva-control { name args } {
+    lappend ::eclasses $name
+    _enum enum $name {*}$args
+}
+
+proc rva-enum { name args } {
+    _enum enum $name {*}$args
 }
 
 # Convert a list of valid register names into a dict for reg -> value map.

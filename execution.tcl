@@ -18,12 +18,18 @@ namespace eval ::tcl::mathfunc {
 proc execut_init {} {
     set ::reg-regexp \\m([join $::rclasses |])\\M
     set ::imm-regexp \\m([join $::iclasses |])\\M
+    set ::enu-regexp \\m([join $::eclasses |])\\M
+    set ::csr-regexp \\m([join [dict keys $::rva::registers::csr] |])\\M
     set ::pcx-regexp \\m(pc)\\M
 
     upvar ::R R
+    upvar ::C C
     set R(pc) 0
     foreach reg $::regNames {
         set R($reg) 0
+    }
+    foreach reg [dict keys $::rva::registers::csr] {
+        set C($reg) 0
     }
 
     dict for {op opcode} $::opcode {
@@ -40,8 +46,13 @@ proc execut_init {} {
             set Code [cexpr2tcl [join $Code]]
             set decode decode$size
 
+            if { $Code eq "" } {
+                set Code "print \$disa : no code for this op"
+            }
+
             proc exec_${mask}_${bits} { word } [% {
                 upvar ::R R
+                upvar ::C C
                 set disa [[dict get %::$decode $mask $bits disa] %word]
                 lassign %disa op $Pars
 
@@ -50,6 +61,25 @@ proc execut_init {} {
             dict set ::opcode $op exec exec_${mask}_${bits}
         }
     }
+}
+
+proc elf_load_file { file } {
+
+    set e [elf::elf create e $file]
+
+    set text ""
+    table foreachrow [pipe { $e get segments | table sort ~ p_paddr -integer }] {
+        set p_paddr [expr { $p_paddr & 0xFFFFF }]
+        if { $p_type eq "PT_LOAD" } {
+            set here [string length $text]
+            if { $p_paddr != 0 } {
+                append text [binary format @[expr { $p_paddr - $here -1 }]c 0]
+            }
+            append text [$e getSegmentDataByIndex $p_index]
+        }
+    }
+
+    return $text
 }
 
 proc load { fname } {
@@ -73,7 +103,7 @@ proc load { fname } {
         .bin {}
         .elf -
         default {
-
+            elf_load_file $fname
         }
     }
 }
@@ -107,6 +137,7 @@ proc execute { verbose args } {
             print [join [lsort [lmap { name value } [array get ::R *] { format "% 4s:  %s" $name $value }]] "\n"]
             set next [expr [clock milliseconds] + 100]
         }
-
     }
+
+    error "execution loop falls through : $::R(pc)"
 }

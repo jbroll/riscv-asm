@@ -5,6 +5,8 @@ proc expr-regsub { expr { dollar \$ } } {
     set expr [regsub -all -- ra $expr R(x1)]
     set expr [regsub -all -- ${::reg-regexp} "$expr" "${dollar}R(\$&)"]
     set expr [regsub -all -- ${::pcx-regexp} "$expr" "${dollar}R(&)"]
+    set expr [regsub -all -- ${::enu-regexp} "$expr" "${dollar}C(\$&)"]
+    set expr [regsub -all -- ${::csr-regexp} "$expr" "${dollar}C(&)"]
     set expr [regsub -all -- ${::imm-regexp} "$expr" "${dollar}&"]
 }
 
