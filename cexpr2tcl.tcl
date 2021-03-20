@@ -17,7 +17,7 @@ sugar::syntaxmacro sugarmath { args } {
         set xx [expr-regsub $xx ""]
         set expr [lrange $args 2 end]
         set expr [expr-regsub $expr]
-        return [list set $xx "\[expr { signed($expr, [xlen]) }]"]
+        return [list set $xx "\[expr { signed(($expr) & msk2([xlen]-1, 0), [xlen]) }]"]
     }
     if { [lindex $args 1] in { += -= *= /= } } {
         set xx [lindex $args 0]
