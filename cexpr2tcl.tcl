@@ -2,7 +2,7 @@
 package require sugar
 
 proc expr-regsub { expr { dollar \$ } } {
-    set expr [regsub -all -- ra $expr x1]
+    set expr [regsub -all -- {\Mra\m} $expr x1]
     set expr [regsub -all -- ${::reg-regexp} "$expr" "${dollar}R(\$&)"]
     set expr [regsub -all -- ${::pcx-regexp} "$expr" "${dollar}R(&)"]
     set expr [regsub -all -- ${::enu-regexp} "$expr" "${dollar}C(\$&)"]

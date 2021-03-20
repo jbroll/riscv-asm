@@ -1,14 +1,15 @@
 ./rva.tcl -march rv32gc example.rva
- 00005 0100 C206       sw ra sp 4
- 00005 0102 C42E       sw a1 sp 8
- 00005 0104 C632       sw a2 sp 12
- 00005 0106 0141       addi sp sp 16
- 00006 0108 00C58533   add a0 a1 a2
- 00007 010C FFFF4297   auipc t0 top
- 00007 0110 12C1       addi t0 t0 top
- 00008 0112 567E       lw a2 sp -4
- 00008 0114 55EE       lw a1 sp -8
- 00008 0116 50DE       lw ra sp -12
- 00008 0118 1141       addi sp sp -16
- 00009 011A B7DD       jal zero top
- 00010 011C 8082       jalr x0 x1 0
+ 00005 0100 0010D0B3   srl ra ra ra
+ 00006 0104 C206       sw ra sp 4
+ 00006 0106 C42E       sw a1 sp 8
+ 00006 0108 C632       sw a2 sp 12
+ 00006 010A 0141       addi sp sp 16
+ 00007 010C 00C58533   add a0 a1 a2
+ 00008 0110 FFFFF297   auipc t0 top
+ 00008 0114 12B1       addi t0 t0 top
+ 00009 0116 567E       lw a2 sp -4
+ 00009 0118 55EE       lw a1 sp -8
+ 00009 011A 50DE       lw ra sp -12
+ 00009 011C 1141       addi sp sp -16
+ 00010 011E B7CD       jal zero top
+ 00011 0120 8082       jalr x0 x1 0

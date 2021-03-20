@@ -1,5 +1,6 @@
 package require jbr::with
 package require jbr::term
+package require jbr::stack
 
 source $root/cexpr2tcl.tcl
 
@@ -13,6 +14,10 @@ namespace eval ::tcl::mathfunc {
     proc st_byte { value addr } { return 0 }
     proc st_half { value addr } { return 0 }
     proc st_word { value addr } { return 0 }
+
+    proc unsigned { value { from 31 } } {
+        expr { $value & msk2($from, 0) }
+    }
 }
 
 proc execut_init {} {
@@ -21,7 +26,7 @@ proc execut_init {} {
     set ::enu-regexp \\m([join $::eclasses |])\\M
     set ::csr-regexp \\m([join [dict keys $::rva::registers::csr] |])\\M
     set ::pcx-regexp \\m([join [list pc {*}$::regNames] |])\\M
-    set ::var-regexp \\m(size)\\M
+    set ::var-regexp \\m(size|tmp)\\M
 
     upvar ::R R
     upvar ::C C
@@ -45,7 +50,7 @@ proc execut_init {} {
             }
 
             if { $Code eq "" } {
-                set Code "print \$disa : no code for this op"
+                set Code [list "print \"        \" no code for this op : $op $pars"]
             }
 
             if { ![regexp {pc [+-]?= } $Code] } {
@@ -101,7 +106,7 @@ proc load { fname } {
                 if { $op eq "" } { continue }
                 append data [binary format [dict get $formats [string length $op]] 0x$op]
             }
-            return $data {}
+            return [list $data {}]
         }
         .bin {}
         .elf -
@@ -115,6 +120,19 @@ proc format-regs { regs } {
     lsort [lmap { name value } $regs { format "% 4s: % 10s" $name $value }]
 }
 
+proc write_state { file state } {
+    with f = [open $file w] {
+        puts $f $state
+    }
+}
+
+proc read_state { file array } {
+    upvar $array R
+    with f = [open $file] {
+        array set R [read $f]
+    }
+}
+
 
 proc execute { verbose args } {
     set file [lindex $args 0]
@@ -123,10 +141,16 @@ proc execute { verbose args } {
     set ::R(pc) 0
     set next 0
     set prev [clock micro]
+    set expr ""
+    set eval ""
 
-    set regs [array get ::R *]
-    set prevpc 0
-    while { $::R(pc) < [string length $text] && $::R(pc) >= 0 } {
+    lpush rstack [array get ::R *]
+    set prevcmd "n"
+
+    upvar ::R R
+    upvar ::C C
+
+    while { $R(pc) < [string length $text] && $R(pc) >= 0 } {
         binary scan $text @${::R(pc)}i word
 
         set cycle [expr [clock micro] - $prev]
@@ -134,33 +158,56 @@ proc execute { verbose args } {
         if { $verbose } {  
             term clear
 
-            set pc $::R(pc)
+            set pc $R(pc)
             set disa [disa_block $pc $pc [expr $pc + 16*4] $syms $text]
+            lappend disa {} {} {} {} {} 
 
-            foreach a [format-regs $regs] b [format-regs [array get ::R *]] c $disa {
+            set dargs [lassign [decode_op disa [0x $word]] dop]
+            lappend disa {*}[split [dict get $::opcode $dop code] \n]
+            set code [dict get $::opcode $dop exec]
+            lappend disa {*}[split  "$code {} [info body $code]" \n] 
+
+            foreach b [format-regs [array get R *]] c $disa {
                 if { [string index $c 0] == "0" && "0x0[lindex $c 0]" == $pc } {
-                    print $a $b "     --> " $c
+                    print $b "     --> " $c
                 } else {
-                    print $a $b "         " $c
+                    print $b "         " $c
                 }
             }
-            set dargs [lassign [decode_op disa [0x $word]] dop]
-
-            print [dict get $::opcode $dop code]
-            set code [dict get $::opcode $dop exec]
-            print $code {} [info body $code]
 
             set next [expr [clock milliseconds] + 100]
-            gets stdin in
-            if { $in eq "q" } {
-                exit
-            }
-            set regs [array get ::R *]
+            print $expr = $eval
+            puts -nonewline " : " ; flush stdout
 
+            gets stdin in
+            if { $in eq "" } { set in $prevcmd }
+            set prevcmd $in
+
+            switch -- $in {
+                w { write_state .state [array get R *] ; continue }
+                r { read_state  .state R               ; continue }
+                q { exit }
+                n { }
+                p { array set R [lpop rstack]          ; continue }
+                default {
+                    try {
+                        set eval [eval $in]
+                    } on error e { }
+
+                    #set expr $in
+                    #set eval [expr [cexpr2tcl $in]]
+                    continue
+                }
+            }
         }
 
+        #print $word [decode_op disa [0x $word]]
+
+        lpush rstack [array get R *]
         decode_op exec $word
-        set ::R(x0) 0
+        #print $word end
+        set R(x0) 0
+
     }
 
     error "execution loop falls through : $::R(pc)"

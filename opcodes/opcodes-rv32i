@@ -14,14 +14,14 @@ opcode beq     rs1 rs2 bimm12                       : 14..12=0 6..2=0x18 1..0=3 
 opcode bne     rs1 rs2 bimm12                       : 14..12=1 6..2=0x18 1..0=3       -> | { if { rs1 != rs2 } { pc += bimm12 } else { pc += size } }
 alias bnez rs1 bimm12 -> bne rs1 x0 bimm12
 opcode blt     rs1 rs2 bimm12                       : 14..12=4 6..2=0x18 1..0=3       -> | { if { rs1 <  rs2 } { pc += bimm12 } else { pc += size } }
-opcode bge     rs1 rs2 bimm12                       : 14..12=5 6..2=0x18 1..0=3       -> | { if { rs1 >- rs2 } { pc += bimm12 } else { pc += size } }
+opcode bge     rs1 rs2 bimm12                       : 14..12=5 6..2=0x18 1..0=3       -> | { if { rs1 >= rs2 } { pc += bimm12 } else { pc += size } }
 opcode bltu    rs1 rs2 bimm12                       : 14..12=6 6..2=0x18 1..0=3       -> | { if { unsigned(rs1) <  unsigned(rs2) } { pc += bimm12 } else { pc += size } }
 opcode bgeu    rs1 rs2 bimm12                       : 14..12=7 6..2=0x18 1..0=3       -> | { if { unsigned(rs1) >= unsigned(rs2) } { pc += bimm12 } else { pc += size } }
 
-opcode jalr     rd rs1 jimm12                       : 14..12=0 6..2=0x19 1..0=3       -> | { rd = pc + 4 ; pc = rs1 + jimm12 }
+opcode jalr     rd rs1 jimm12                       : 14..12=0 6..2=0x19 1..0=3       -> | { tmp = pc + size ; pc = rs1 + jimm12 ; rd = tmp }
 alias  jalr        rs1 jimm12   -> jalr ra rs1 jimm12
 
-opcode jal      rd jimm20                           :         6..2=0x1b 1..0=3        -> | { ra = pc + 4 ; pc += jimm20 }
+opcode jal      rd jimm20                           :         6..2=0x1b 1..0=3        -> | { rd = pc + 4 ; pc += jimm20 }
 alias  jal         jimm20       -> jal  ra jimm20
 
 opcode lui     rd imm20                             :        6..2=0x0D 1..0=3         -> | { rd = imm20 }
@@ -31,25 +31,25 @@ opcode nop               : 11..7=0 19..15=0 31..20=0  14..12=0 6..2=0x04 1..0=3 
 opcode addi    rd rs1 aimm12                        : 14..12=0 6..2=0x04 1..0=3       -> | { rd = rs1 + aimm12 }
 alias li rd aimm12 -> addi rd x0 aimm12
 alias nop -> addi x0 x0 0
-opcode slli    rd rs1 shamt6              : 31..26=0  14..12=1 6..2=0x04 1..0=3       -> | { rd = rs1 << shamt6 }
-opcode slti    rd rs1 aimm12                        : 14..12=2 6..2=0x04 1..0=3
-opcode sltiu   rd rs1 aimm12                        : 14..12=3 6..2=0x04 1..0=3
+opcode slli    rd rs1 shamt6              : 31..26=0  14..12=1 6..2=0x04 1..0=3       -> | { rd = rs1 << unsigned(shamt6) }
+opcode slti    rd rs1 aimm12                        : 14..12=2 6..2=0x04 1..0=3       -> | { rd = rs1 < aimm12 ? 1 : 0 }
+opcode sltiu   rd rs1 aimm12                        : 14..12=3 6..2=0x04 1..0=3       -> | { rd = unsigned(rs1) < unsigned(aimm12) ? 1 : 0 }
 opcode xori    rd rs1 aimm12                        : 14..12=4 6..2=0x04 1..0=3       -> | { rd = rs1 ^ aimm12 }
 opcode ori     rd rs1 aimm12                        : 14..12=6 6..2=0x04 1..0=3       -> | { rd = rs1 | aimm12 }
 opcode andi    rd rs1 aimm12                        : 14..12=7 6..2=0x04 1..0=3       -> | { rd = rs1 & aimm12 }
 
-opcode srli    rd rs1 shamt6              : 31..26=0  14..12=5 6..2=0x04 1..0=3       -> | { rd = rs1 << shamt6 }
-opcode srai    rd rs1 shamt6              : 31..26=16 14..12=5 6..2=0x04 1..0=3       -> | { rd = rs1 >> shamt6 }
+opcode srli    rd rs1 shamt6              : 31..26=0  14..12=5 6..2=0x04 1..0=3       -> | { rd = (rs1 >> unsigned(shamt6)) & msk2(31-unsigned(shamt6), 0) }
+opcode srai    rd rs1 shamt6              : 31..26=16 14..12=5 6..2=0x04 1..0=3       -> | { rd =  rs1 >> unsigned(shamt6) }
 
 opcode add     rd rs1 rs2                 : 31..25=0  14..12=0 6..2=0x0C 1..0=3       -> | { rd = rs1 + rs2 }
 alias mv rd rs  -> add rd x0 rs
-opcode sub     rd rs1 rs2                 : 31..25=32 14..12=0 6..2=0x0C 1..0=3       -> | { rd = rs1 - rs2 }
-opcode sll     rd rs1 rs2                 : 31..25=0  14..12=1 6..2=0x0C 1..0=3
-opcode slt     rd rs1 rs2                 : 31..25=0  14..12=2 6..2=0x0C 1..0=3
-opcode sltu    rd rs1 rs2                 : 31..25=0  14..12=3 6..2=0x0C 1..0=3
+opcode sub     rd rs1 rs2                 : 31..25=32 14..12=0 6..2=0x0C 1..0=3       -> | { rd = rs1 -  rs2 }
+opcode sll     rd rs1 rs2                 : 31..25=0  14..12=1 6..2=0x0C 1..0=3       -> | { rd = rs1 << unsigned(rs2, 4) }
+opcode slt     rd rs1 rs2                 : 31..25=0  14..12=2 6..2=0x0C 1..0=3       -> | { rd = rs1 <  rs2 ? 1 : 0 }
+opcode sltu    rd rs1 rs2                 : 31..25=0  14..12=3 6..2=0x0C 1..0=3       -> | { rd = unsigned(rs1) < unsigned(rs2) ? 1 : 0 }
 opcode xor     rd rs1 rs2                 : 31..25=0  14..12=4 6..2=0x0C 1..0=3       -> | { rd = rs1 ^ rs2 }
-opcode srl     rd rs1 rs2                 : 31..25=0  14..12=5 6..2=0x0C 1..0=3
-opcode sra     rd rs1 rs2                 : 31..25=32 14..12=5 6..2=0x0C 1..0=3
+opcode srl     rd rs1 rs2                 : 31..25=0  14..12=5 6..2=0x0C 1..0=3       -> | { rd = (rs1 >> unsigned(rs2, 4)) & msk2(31-unsigned(rs2, 4), 0) }
+opcode sra     rd rs1 rs2                 : 31..25=32 14..12=5 6..2=0x0C 1..0=3       -> | { rd =  rs1 >> unsigned(rs2, 4) }
 opcode or      rd rs1 rs2                 : 31..25=0  14..12=6 6..2=0x0C 1..0=3       -> | { rd = rs1 | rs2 }
 opcode and     rd rs1 rs2                 : 31..25=0  14..12=7 6..2=0x0C 1..0=3       -> | { rd = rs1 & rs2 }
 
@@ -69,14 +69,14 @@ opcode fence.tso                          : 31..28=8  27..24=3 23..20=3 19..15=0
 
 opcode ecall             : 11..7=0 19..15=0 31..20=0x000 14..12=0 6..2=0x1C 1..0=3    -> | { 
     if { x17 != 93 } { 
-        eprint "Unknown ecall"
+        print "\tnknown ecall"
         exit 1 
     } else {
         if { x10 == 0 } {
-            eprint "Test pass"
+            print "\tTest pass"
             exit 0
         } 
-        eprint "Test Fail "  [expr x10 >> 1]
+        print "\tTest Fail "  [expr x10 >> 1]
         exit 1
     }
 }

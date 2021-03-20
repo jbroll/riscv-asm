@@ -1,6 +1,6 @@
 # RV64I additions to RV32I
 
-opcode addiw   rd rs1 aimm12  :           14..12=0 6..2=0x06 1..0=3
+opcode addiw   rd rs1 aimm12  :           14..12=0 6..2=0x06 1..0=3     -> | { rd = unsigned(rs1 + aimm12, 32) }
 opcode slliw   rd rs1 shamt6  : 31..25=_0 14..12=1 6..2=0x06 1..0=3
 opcode srliw   rd rs1 shamt6  : 31..25=_0 14..12=5 6..2=0x06 1..0=3
 opcode sraiw   rd rs1 shamt6  : 31..25=32 14..12=5 6..2=0x06 1..0=3
