@@ -9,5 +9,5 @@ clean:
 	rm test/tmp/*
 
 test: 
-	cd test && $(MAKE) test
+	cd test-gas && $(MAKE) test
 
