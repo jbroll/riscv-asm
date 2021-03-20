@@ -26,7 +26,7 @@ proc execut_init {} {
     set ::enu-regexp \\m([join $::eclasses |])\\M
     set ::csr-regexp \\m([join [dict keys $::rva::registers::csr] |])\\M
     set ::pcx-regexp \\m([join [list pc {*}$::regNames] |])\\M
-    set ::var-regexp \\m(size|tmp)\\M
+    set ::var-regexp \\m(size|tmp|xlen)\\M
 
     upvar ::R R
     upvar ::C C
@@ -60,7 +60,7 @@ proc execut_init {} {
             set decode decode$size
 
             proc exec_${mask}_${bits} { word } [% {
-                set size $size ; upvar ::R R ; upvar ::C C
+                set size $size ; set xlen [xlen] ; upvar ::R R ; upvar ::C C
                 set disa [[dict get %::$decode $mask $bits disa] %word]
                 lassign %disa op $Pars
                 $Code
@@ -116,8 +116,8 @@ proc load { fname } {
     }
 }
 
-proc format-regs { regs } {
-    lsort [lmap { name value } $regs { format "% 4s: % 10s" $name $value }]
+proc format-regs { regs format } {
+    lsort [lmap { name value } $regs { format "% 4s: $format" $name $value }]
 }
 
 proc write_state { file state } {
@@ -143,6 +143,14 @@ proc execute { verbose args } {
     set prev [clock micro]
     set expr ""
     set eval ""
+    if { [xlen] == 32 } {
+        set hex_format "         %08x"
+        set dec_format " % 16d"
+    } else {
+        set hex_format " %016x"
+        set dec_format " % 16d"
+    }
+    set format $dec_format
 
     lpush rstack [array get ::R *]
     set prevcmd "n"
@@ -167,7 +175,7 @@ proc execute { verbose args } {
             set code [dict get $::opcode $dop exec]
             lappend disa {*}[split  "$code {} [info body $code]" \n] 
 
-            foreach b [format-regs [array get R *]] c $disa {
+            foreach b [format-regs [array get R *] $format] c $disa {
                 if { [string index $c 0] == "0" && "0x0[lindex $c 0]" == $pc } {
                     print $b "     --> " $c
                 } else {
@@ -186,6 +194,8 @@ proc execute { verbose args } {
             switch -- $in {
                 w { write_state .state [array get R *] ; continue }
                 r { read_state  .state R               ; continue }
+                d { set format $dec_format             ; continue}
+                x { set format $hex_format             ; continue}
                 q { exit }
                 n { }
                 p { array set R [lpop rstack]          ; continue }

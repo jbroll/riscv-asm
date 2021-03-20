@@ -155,7 +155,7 @@ namespace eval ::tcl::mathfunc {
         return $value
     }
 
-    proc msk2 { hi lo } { 0x [expr { 0xffffffff & ((exp2($hi+1) - 1) ^ (exp2($lo) - 1)) }] }
+    proc msk2 { hi lo } { 0x [expr { (exp2($hi+1) - 1) ^ (exp2($lo) - 1) }] }
     proc exp2 { n } { return [expr { 1 << $n }] }
 
     proc enum { name names message } { 
@@ -197,7 +197,7 @@ namespace eval ::tcl::mathfunc {
     proc match_iorw vx { expr { $vx eq "iorw" } }
 
     proc signed { value bits } {
-        expr { $value - (($value & exp2($bits-1)) == 0 ? 0 : exp2($bits)) }
+        expr { ($value & msk2($bits-1, 0)) - (($value & exp2($bits-1)) == 0 ? 0 : exp2($bits)) }
     }
 
     namespace export msk2 exp2

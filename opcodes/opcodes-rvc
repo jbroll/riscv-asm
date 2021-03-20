@@ -2,7 +2,7 @@
 
 immediate  nzimm6     12|6..2                        6
 immediate  nzimm6sp   12|4..3|5|2|6|xxxx            10
-immediate  nzimm8     10..7|12..11|5|6|xx           10
+immediate  nzimm8sp   10..7|12..11|5|6|xx           unsigned
 immediate  cbimm6     12|6..2                        6
 immediate  cbshamt6   12|6..2                        6
 immediate  cbshamt5      6..2                        5
@@ -20,7 +20,7 @@ opcode c.addi16sp  nzimm6sp        : 1..0=1 15..13=3      11..7=2            -> 
 
 # C0 encoding space
 #
-opcode c.addi4spn crdlc nzimm8            : 1..0=0 15..13=0                  ->  addi crdlc   x2 nzimm8 
+opcode c.addi4spn crdlc nzimm8sp          : 1..0=0 15..13=0                  ->  addi crdlc   x2 nzimm8sp 
 opcode c.lw       crdlc crs1c clswimm6    : 1..0=0 15..13=2                  ->  lw   crdlc crs1c clswimm6
 opcode c.sw       crs2c crs1c clswimm6    : 1..0=0 15..13=6                  ->  sw   crs2c crs1c clswimm6
 
