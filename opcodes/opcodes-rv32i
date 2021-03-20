@@ -10,12 +10,13 @@ immediate shamt6    25..20                   6
 immediate  uimm5    19..15                  unsigned
 
 opcode unimp                                        : 31..0=0
-opcode beq     rs1 rs2 bimm12                       : 14..12=0 6..2=0x18 1..0=3       -> | { if { rs1 == rs2 } { pc += bimm12 } }
-opcode bne     rs1 rs2 bimm12                       : 14..12=1 6..2=0x18 1..0=3       -> | { if { rs1 != rs2 } { pc += bimm12 } }
-opcode blt     rs1 rs2 bimm12                       : 14..12=4 6..2=0x18 1..0=3       -> | { if { rs1 <  rs2 } { pc += bimm12 } }
-opcode bge     rs1 rs2 bimm12                       : 14..12=5 6..2=0x18 1..0=3       -> | { if { rs1 >- rs2 } { pc += bimm12 } }
-opcode bltu    rs1 rs2 bimm12                       : 14..12=6 6..2=0x18 1..0=3       -> | { if { unsigned(rs1) <  unsigned(rs2) } { pc += bimm12 } }
-opcode bgeu    rs1 rs2 bimm12                       : 14..12=7 6..2=0x18 1..0=3       -> | { if { unsigned(rs1) >= unsigned(rs2) } { pc += bimm12 } }
+opcode beq     rs1 rs2 bimm12                       : 14..12=0 6..2=0x18 1..0=3       -> | { if { rs1 == rs2 } { pc += bimm12 } else { pc += size } }
+opcode bne     rs1 rs2 bimm12                       : 14..12=1 6..2=0x18 1..0=3       -> | { if { rs1 != rs2 } { pc += bimm12 } else { pc += size } }
+alias bnez rs1 bimm12 -> bne rs1 x0 bimm12
+opcode blt     rs1 rs2 bimm12                       : 14..12=4 6..2=0x18 1..0=3       -> | { if { rs1 <  rs2 } { pc += bimm12 } else { pc += size } }
+opcode bge     rs1 rs2 bimm12                       : 14..12=5 6..2=0x18 1..0=3       -> | { if { rs1 >- rs2 } { pc += bimm12 } else { pc += size } }
+opcode bltu    rs1 rs2 bimm12                       : 14..12=6 6..2=0x18 1..0=3       -> | { if { unsigned(rs1) <  unsigned(rs2) } { pc += bimm12 } else { pc += size } }
+opcode bgeu    rs1 rs2 bimm12                       : 14..12=7 6..2=0x18 1..0=3       -> | { if { unsigned(rs1) >= unsigned(rs2) } { pc += bimm12 } else { pc += size } }
 
 opcode jalr     rd rs1 jimm12                       : 14..12=0 6..2=0x19 1..0=3       -> | { rd = pc + 4 ; pc = rs1 + jimm12 }
 alias  jalr        rs1 jimm12   -> jalr ra rs1 jimm12
@@ -66,7 +67,19 @@ opcode fence   pred succ                  : 31..28=0  19..15=0 14..12=0 11..7=0 
 alias fence -> fence iorw iorw
 opcode fence.tso                          : 31..28=8  27..24=3 23..20=3 19..15=0 14..12=0 11..7=0 6..2=0x03 1..0=3  -> | { }
 
-opcode ecall             : 11..7=0 19..15=0 31..20=0x000 14..12=0 6..2=0x1C 1..0=3    -> | { print ECALL }
+opcode ecall             : 11..7=0 19..15=0 31..20=0x000 14..12=0 6..2=0x1C 1..0=3    -> | { 
+    if { x17 != 93 } { 
+        eprint "Unknown ecall"
+        exit 1 
+    } else {
+        if { x10 == 0 } {
+            eprint "Test pass"
+            exit 0
+        } 
+        eprint "Test Fail "  [expr x10 >> 1]
+        exit 1
+    }
+}
 opcode ebreak            : 11..7=0 19..15=0 31..20=0x001 14..12=0 6..2=0x1C 1..0=3
 
 opcode uret              : 11..7=0 19..15=0 31..20=0x002 14..12=0 6..2=0x1C 1..0=3

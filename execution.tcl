@@ -20,7 +20,8 @@ proc execut_init {} {
     set ::imm-regexp \\m([join $::iclasses |])\\M
     set ::enu-regexp \\m([join $::eclasses |])\\M
     set ::csr-regexp \\m([join [dict keys $::rva::registers::csr] |])\\M
-    set ::pcx-regexp \\m(pc)\\M
+    set ::pcx-regexp \\m([join [list pc {*}$::regNames] |])\\M
+    set ::var-regexp \\m(size)\\M
 
     upvar ::R R
     upvar ::C C
@@ -43,19 +44,20 @@ proc execut_init {} {
                 set Pars [dict get $::opcode $mop pars]
             }
 
-            set Code [cexpr2tcl [join $Code]]
-            set decode decode$size
-
             if { $Code eq "" } {
                 set Code "print \$disa : no code for this op"
             }
 
+            if { ![regexp {pc [+-]?= } $Code] } {
+                set Code [list "[lindex $Code 0]; pc += $size"]
+            }
+            set Code [cexpr2tcl [join $Code]]
+            set decode decode$size
+
             proc exec_${mask}_${bits} { word } [% {
-                upvar ::R R
-                upvar ::C C
+                set size $size ; upvar ::R R ; upvar ::C C
                 set disa [[dict get %::$decode $mask $bits disa] %word]
                 lassign %disa op $Pars
-
                 $Code
             }]
             dict set ::opcode $op exec exec_${mask}_${bits}
@@ -78,8 +80,9 @@ proc elf_load_file { file } {
             append text [$e getSegmentDataByIndex $p_index]
         }
     }
+    set syms [load_syms $e]
 
-    return $text
+    return [list $text $syms]
 }
 
 proc load { fname } {
@@ -98,45 +101,66 @@ proc load { fname } {
                 if { $op eq "" } { continue }
                 append data [binary format [dict get $formats [string length $op]] 0x$op]
             }
-            return $data
+            return $data {}
         }
         .bin {}
         .elf -
         default {
-            elf_load_file $fname
+            return [elf_load_file $fname]
         }
     }
 }
 
+proc format-regs { regs } {
+    lsort [lmap { name value } $regs { format "% 4s: % 10s" $name $value }]
+}
+
+
 proc execute { verbose args } {
     set file [lindex $args 0]
-    set text [load $file]
+    lassign [load $file] text syms
 
     set ::R(pc) 0
     set next 0
     set prev [clock micro]
 
+    set regs [array get ::R *]
+    set prevpc 0
     while { $::R(pc) < [string length $text] && $::R(pc) >= 0 } {
         binary scan $text @${::R(pc)}i word
 
-        if { ($word & 0x03) == 0x03 || ![iset c] } {
-            set word [expr { $word & 0xFFFFFFFF }]
-            decode_op4 exec [0x $word]
-            incr ::R(pc) 4
-        } else {
-            set word [expr { $word & 0x0000FFFF }]
-            decode_op2 exec [0x $word]
-            incr ::R(pc) 2
-        }
-
         set cycle [expr [clock micro] - $prev]
         set prev [clock micro]
-        if { $verbose && $next < [clock milliseconds] } {  
+        if { $verbose } {  
             term clear
-            puts -nonewline "cycle: [format %4s $cycle]"
-            print [join [lsort [lmap { name value } [array get ::R *] { format "% 4s:  %s" $name $value }]] "\n"]
+
+            set pc $::R(pc)
+            set disa [disa_block $pc $pc [expr $pc + 16*4] $syms $text]
+
+            foreach a [format-regs $regs] b [format-regs [array get ::R *]] c $disa {
+                if { [string index $c 0] == "0" && "0x0[lindex $c 0]" == $pc } {
+                    print $a $b "     --> " $c
+                } else {
+                    print $a $b "         " $c
+                }
+            }
+            set dargs [lassign [decode_op disa [0x $word]] dop]
+
+            print [dict get $::opcode $dop code]
+            set code [dict get $::opcode $dop exec]
+            print $code {} [info body $code]
+
             set next [expr [clock milliseconds] + 100]
+            gets stdin in
+            if { $in eq "q" } {
+                exit
+            }
+            set regs [array get ::R *]
+
         }
+
+        decode_op exec $word
+        set ::R(x0) 0
     }
 
     error "execution loop falls through : $::R(pc)"

@@ -51,11 +51,10 @@ proc unalias { args } {
     return $disa
 }
 
-proc load_syms { elf section } {
+proc load_syms { elf } {
     set syms {}
     try {
         set syms [pipe { $elf get .symtab | 
-                     table row ~ section section { $st_name != "" && $st_shnm == $section } |
                      table col ~ st_name st_value |
                      table todict |
                      lreverse ~
@@ -68,7 +67,6 @@ proc load_syms { elf section } {
                          lreverse ~
         }]
         lappend syms {*}$dsym
-        print $row
     } on error e {}
 
     return $syms
@@ -76,44 +74,59 @@ proc load_syms { elf section } {
 
 proc disa_section { elf section } {
 
-    set syms [load_syms $elf $section]
+    set syms [load_syms $elf]
 
     set head [$elf getSectionHeaderByName $section]
     set addr [dict get $head sh_addr]
     set data [$elf getSectionDataByName $section]
     set here 0
 
-    while { $here < [string length $data] } {
-        binary scan $data @${here}i word
+    print [join [disa_block $here $addr [string length $data] $syms $data] \n]
+}
 
+proc disa_block { here addr leng syms data } {
+    set lines {}
+
+    while { $here < $leng } {
+        binary scan $data @${here}i word
 
         set symbol ""
         if { [dict exists $syms $addr] } {
-            print
-            print "        " [dict get $syms $addr] :
+            lappend lines {}
+            lappend lines "        [dict get $syms $addr] :"
         }
         if { ($word & 0x03) == 0x03 || ![iset c] } {
             set word [expr { $word & 0xFFFFFFFF }]
 
-            set disa [decode_op4 disa [0x $word]]
+            if { $::unalias } {
+                set disa [unalias {*}[decode_op4 disa [0x $word]]]
+            } else {
+                set disa [decode_op4 disa [0x $word]]
+            }
             set dargs [lassign $disa dop]
             set wide 8
             set skip 4
             set size 4
         } else {
             set word [expr { $word & 0x0000FFFF }]
-            set disa [decode_op2 disa [0x $word]]
+            if { $::unalias } {
+                set disa [unalias {*}[decode_op2 disa [0x $word]]]
+            } else {
+                set disa [decode_op2 disa [0x $word]]
+            }
             set dargs [lassign $disa dop]
             set wide 4
             set skip 8
             set size 2
         }
 
-        print [format "%04x %0-*x %*s     %-8s" $addr $wide $word $skip "" $dop] $dargs 
+        lappend lines "[format "%04x %0-*x %*s     %-8s" $addr $wide $word $skip "" $dop] $dargs"
 
         incr addr $size
         incr here $size
     }
+
+    return $lines
 }
 
 proc disassemble { args } {

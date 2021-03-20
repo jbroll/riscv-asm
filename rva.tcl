@@ -36,6 +36,9 @@ proc .text { args } {}
 proc iset { iset } {
     expr { [dict exists $::iset $iset] && [dict get $::iset $iset] eq $iset }
 }
+proc xlen {} {
+    dict get $::iset rlen
+}
 
 proc 0x { value { width 8 } } { format 0x%0*X $width $value }
 
@@ -107,7 +110,7 @@ proc main { args } {
     if { [iset q] } { include opcodes/opcodes-rv32q }
 
     if { [iset c] } { include opcodes/opcodes-rvc }
-    if { [dict get $::iset rlen] == 32 } {
+    if { [xlen] == 32 } {
         if { [iset c] }               { include opcodes/opcodes-rv32c }
         if { [iset c] && [iset f]   } { include opcodes/opcodes-rv32fc }
     }
@@ -116,7 +119,7 @@ proc main { args } {
     if { [iset d] && [iset zfh] } { include opcodes/opcodes-rv32d-zfh }
     if { [iset q] && [iset zfh] } { include opcodes/opcodes-rv32q-zfh }
 
-    if { [dict get $::iset rlen] == 64 } {
+    if { [xlen] == 64 } {
         include opcodes/opcodes-rv64i                       ; # Always.
 
         if { [iset m] } { include opcodes/opcodes-rv64m }

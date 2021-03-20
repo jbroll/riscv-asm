@@ -34,13 +34,26 @@ proc decode { type word decode } {
     return  unimp
 }
 
-proc decode_op4 { type op } {
-    unalias {*}[decode $type $op $::decode4]
+proc decode_op { type word } {
+    if { ($word & 0x03) == 0x03 || ![iset c] } {
+        set word [expr { $word & 0xFFFFFFFF }]
+        decode $type $word $::decode4
+    } else {
+        if { ![iset c] } {
+            error "compact instructions not enabled : $word"
+        } 
+        set word [expr { $word & 0x0000FFFF }]
+        decode $type $word $::decode2
+    }
 }
 
-proc decode_op2 { type op } {
-    if { ![iset c] } {
-        error "compact instructions not enabled : $op"
-    } 
-    unalias {*}[decode $type $op $::decode2]
+proc decode_op4 { type word } {
+    unalias {*}[decode $type $word $::decode4]
 }
+proc decode_op2 { type word } {
+    if { ![iset c] } {
+        error "compact instructions not enabled : $word"
+    } 
+    unalias {*}[decode $type $word $::decode2]
+}
+
