@@ -56,7 +56,8 @@ namespace eval ::elf {
     set v_ident { elfmag0 elfmagName ei_class ei_data ei_version ei_osabi ei_abiversion ei_pad }
     set v_hdr   { e_type e_machine e_version e_entry e_phoff e_shoff e_flags e_ehsize e_phentsize e_phnum e_shentsize e_shnum e_shstrndx }
     set v_sec   { sh_name sh_type sh_flags sh_addr sh_offset sh_size sh_link sh_info sh_addralign sh_entsize }
-    set v_prg   { p_type p_offset p_vaddr p_paddr p_filesz p_memsz p_flags p_align }
+    set v_prg32 { p_type          p_offset p_vaddr p_paddr p_filesz p_memsz p_flags p_align }
+    set v_prg64 { p_type p_flags  p_offset p_vaddr p_paddr p_filesz p_memsz         p_align }
     set v_sym32 { st_name st_value st_size st_info st_other st_shndx }
     set v_sym64 { st_name st_info st_other st_shndx st_value st_size }
     set v_rel   { r_offset r_info }
@@ -66,12 +67,13 @@ namespace eval ::elf {
 
     set sectionHeaders [% {
         section { { sh_index $::elf::v_sec                            } }
-        segment { {  p_index $::elf::v_prg                            } }
         rel     { { r_index  $::elf::v_rel   r_sym r_type             } }
         rela    { { r_index  $::elf::v_rela  r_sym r_type             } }
         note    { { n_index  $::elf::v_note                           } }
         dynamic { { d_index  $::elf::v_dyn                            } }
 
+        ELFCLASS32-segment { {  p_index $::elf::v_prg32                          } }
+        ELFCLASS64-segment { {  p_index $::elf::v_prg64                          } }
         ELFCLASS32-symtab  { { st_index $::elf::v_sym32 st_shnm st_bind st_type  } }
         ELFCLASS64-symtab  { { st_index $::elf::v_sym64 st_shnm st_bind st_type  } }
         ELFCLASS32-dynsym  { { st_index $::elf::v_sym32 st_shnm st_bind st_type  } }
@@ -88,10 +90,10 @@ namespace eval ::elf {
         ELFCLASS32-ELFDATA2MSB-section { size 40   names {$v_sec}   scan {Iu Iu Iu Iu Iu Iu Iu Iu Iu Iu} }
         ELFCLASS64-ELFDATA2LSB-section { size 64   names {$v_sec}   scan {iu iu wu wu wu wu iu iu wu wu} }
         ELFCLASS64-ELFDATA2MSB-section { size 64   names {$v_sec}   scan {Iu Iu Wu Wu Wu Wu Iu Iu Wu Wu} }
-        ELFCLASS32-ELFDATA2LSB-segment { size 32   names {$v_prg}   scan {iu iu iu iu iu iu iu iu} }
-        ELFCLASS32-ELFDATA2MSB-segment { size 32   names {$v_prg}   scan {Iu Iu Iu Iu Iu Iu Iu Iu} }
-        ELFCLASS64-ELFDATA2LSB-segment { size 56   names {$v_prg}   scan {iu iu wu wu wu wu wu wu} }
-        ELFCLASS64-ELFDATA2MSB-segment { size 56   names {$v_prg}   scan {Iu Iu Wu Wu Wu Wu Wu Wu} }
+        ELFCLASS32-ELFDATA2LSB-segment { size 32   names {$v_prg32} scan {iu iu iu iu iu iu iu iu} }
+        ELFCLASS32-ELFDATA2MSB-segment { size 32   names {$v_prg32} scan {Iu Iu Iu Iu Iu Iu Iu Iu} }
+        ELFCLASS64-ELFDATA2LSB-segment { size 56   names {$v_prg64} scan {iu iu wu wu wu wu wu wu} }
+        ELFCLASS64-ELFDATA2MSB-segment { size 56   names {$v_prg64} scan {Iu Iu Wu Wu Wu Wu Wu Wu} }
 
         ELFCLASS32-ELFDATA2LSB-symtab  { size 16   names {$v_sym32} scan {iu iu iu cu cu su} }
         ELFCLASS32-ELFDATA2MSB-symtab  { size 16   names {$v_sym32} scan {Iu Iu Iu cu cu Su} }
