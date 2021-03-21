@@ -2,6 +2,11 @@
 .org    0x0100
 
 top:
+    li      x10 0
+    c.addi  x10 16
+    c.addi  x10 32
+    c.lui   x6 32
+    c.lui   x7 65536
     li      x4 88
     li      x3 10
     sb      x4 x3 0

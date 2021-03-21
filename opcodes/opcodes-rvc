@@ -1,6 +1,7 @@
 # compressed instructions
 
 immediate  nzimm6     12|6..2                        6
+immediate  nzimm6up   12|6..2|xxxxxxxxxxxx          18
 immediate  nzimm6sp   12|4..3|5|2|6|xxxx            10
 immediate  nzimm8sp   10..7|12..11|5|6|xx           unsigned
 immediate  cbimm6     12|6..2                        6
@@ -28,8 +29,8 @@ opcode c.sw       crs2c crs1c clswimm6    : 1..0=0 15..13=6                  -> 
 #
 opcode c.addi    rd    nzimm6       : 1..0=1 15..13=0                        ->  addi rd    rd    nzimm6
 alias nop -> addi x0 x0 0
-opcode c.li      rdnz  ciimm6       : 1..0=1 15..13=2                        ->  addi rdnz   x0    ciimm6
-opcode c.lui     rdn2  nzimm6       : 1..0=1 15..13=3                        ->  lui  rdn2       nzimm6
+opcode c.li      rdnz  ciimm6       : 1..0=1 15..13=2                        ->  addi rdnz   x0   ciimm6
+opcode c.lui     rdn2  nzimm6up     : 1..0=1 15..13=3                        ->  lui  rdn2        nzimm6up
 opcode c.andi    crdhc  cbimm6      : 1..0=1 15..13=4 11..10=2               ->  andi crdhc crdhc cbimm6
 opcode c.sub      crdhc crs2c       : 1..0=1 15..13=4 12=0 11..10=3 6..5=0   ->  sub  crdhc crdhc crs2c
 opcode c.xor      crdhc crs2c       : 1..0=1 15..13=4 12=0 11..10=3 6..5=1   ->  xor  crdhc crdhc crs2c

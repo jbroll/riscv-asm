@@ -1,21 +1,25 @@
-./rva.tcl -march rv32g example.rva
- 00005 0100 05800213   addi x4 x0 88
- 00006 0104 00A00193   addi x3 x0 10
- 00007 0108 00418023   sb x4 x3 0
- 00008 010C 00018283   lb x5 x3 0
- 00009 0110 00000073   ecall
- 00010 0114 0001A283   lw x5 x3 0
- 00011 0118 0010D0B3   srl ra ra ra
- 00012 011C 00112223   sw ra sp 4
- 00012 0120 00B12423   sw a1 sp 8
- 00012 0124 00C12623   sw a2 sp 12
- 00012 0128 01010113   addi sp sp 16
- 00013 012C 00C58533   add a0 a1 a2
- 00014 0130 FFFFF297   auipc t0 top
- 00014 0134 FCC28293   addi t0 t0 top
- 00015 0138 FFC12603   lw a2 sp -4
- 00015 013C FF812583   lw a1 sp -8
- 00015 0140 FF412083   lw ra sp -12
- 00015 0144 FF010113   addi sp sp -16
- 00016 0148 FB9FF06F   jal zero top
- 00017 014C 00008067   jalr x0 x1 0
+ 00005 0100 4501       addi x10 x0 0
+ 00006 0102 0541       c.addi x10 16
+ 00007 0104 1501       c.addi x10 32
+ 00008 0106 6301       c.lui x6 32
+ 00009 0108 63C1       c.lui x7 65536
+ 00010 010A 05800213   addi x4 x0 88
+ 00011 010E 41A9       addi x3 x0 10
+ 00012 0110 00418023   sb x4 x3 0
+ 00013 0114 00018283   lb x5 x3 0
+ 00014 0118 00000073   ecall
+ 00015 011C 0001A283   lw x5 x3 0
+ 00016 0120 0010D0B3   srl ra ra ra
+ 00017 0124 C206       sw ra sp 4
+ 00017 0126 C42E       sw a1 sp 8
+ 00017 0128 C632       sw a2 sp 12
+ 00017 012A 0141       addi sp sp 16
+ 00018 012C 00C58533   add a0 a1 a2
+ 00019 0130 FFFFF297   auipc t0 top
+ 00019 0134 02B1       addi t0 t0 top
+ 00020 0136 567E       lw a2 sp -4
+ 00020 0138 55EE       lw a1 sp -8
+ 00020 013A 50DE       lw ra sp -12
+ 00020 013C 1141       addi sp sp -16
+ 00021 013E B7C9       jal zero top
+ 00022 0140 8082       jalr x0 x1 0

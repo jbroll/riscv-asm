@@ -115,6 +115,9 @@ proc printOp { op args } {
       lr.w - sc.w - lr.d - sc.d {
           lset ll end "([lindex $ll end])"
       }
+      c.lui - lui - auipc {
+          lset instr end [expr { [lindex $ll end] << 12 }]
+      }
     }
     puts "$op [join $ll ","]       ; # $instr"
 }

@@ -135,10 +135,7 @@ proc load { fname } {
     switch [file extension $fname] {
         .lst { 
             set formats { 4 s 8 i }
-            with file = [open $fname r] {
-                gets $file
-                set lines [read $file]
-            }
+            with file = [open $fname r] { set lines [read $file] }
 
             set data ""
             foreach line [split $lines \n] {
