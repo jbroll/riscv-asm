@@ -28,12 +28,7 @@ proc rva-enum { name bits message args } {
 
 }
 
-proc rand { n } {
-    expr { int(rand()*$n) % $n }
-}
 proc alias { args } {}
-
-
 proc arg1 { ll } { lindex $ll 0 }
 proc arg2 { ll } { lindex $ll 1 }
 proc arg3 { ll } { lindex $ll 2 }
