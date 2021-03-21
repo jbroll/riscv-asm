@@ -55,7 +55,10 @@ namespace eval ::tcl::mathfunc {
     proc unsigned { value { from 31 } } {
         expr { $value & msk2($from, 0) }
     }
+
+    namespace export ld_uword
 }
+namespace import ::tcl::mathfunc::ld_uword
 
 proc execut_init {} {
     set ::reg-regexp \\m([join $::rclasses |])\\M
@@ -124,13 +127,6 @@ proc elf_load_file { file } {
     }
     set syms [load_syms $e]
 
-    binary scan $text cu* bytes 
-    set i 0
-    foreach byte $bytes {
-        lset ::mem $i $byte
-        incr i
-    }
-
     return [list $text $syms]
 }
 
@@ -152,7 +148,10 @@ proc load { fname } {
             }
             return [list $data {}]
         }
-        .bin {}
+        .bin {
+            with file = [open $fname r] { set text [read $file] }
+            return [list $text {}]
+        }
         .elf -
         default {
             return [elf_load_file $fname]
@@ -182,6 +181,13 @@ proc execute { verbose args } {
     set file [lindex $args 0]
     lassign [load $file] text syms
 
+    binary scan $text cu* bytes 
+    set i 0
+    foreach byte $bytes {
+        lset ::mem $i $byte
+        incr i
+    }
+
     set ::R(pc) 0
     set next 0
     set prev [clock micro]
@@ -203,7 +209,7 @@ proc execute { verbose args } {
     upvar ::C C
 
     while { $R(pc) < [string length $text] && $R(pc) >= 0 } {
-        binary scan $text @${::R(pc)}i word
+        set word [ld_uword $R(pc)]
 
         set cycle [expr [clock micro] - $prev]
         set prev [clock micro]
@@ -257,16 +263,13 @@ proc execute { verbose args } {
                     continue
                 }
             }
+
+            lpush rstack [array get R *]
         }
 
-        #print $word [decode_op disa [0x $word]]
-
-        lpush rstack [array get R *]
         decode_op exec $word
-        #print $word end
         set R(x0) 0
-
     }
 
-    error "execution loop falls through : $::R(pc)"
+    error "execution loop falls through : $R(pc)"
 }
