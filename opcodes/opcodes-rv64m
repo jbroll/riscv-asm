@@ -1,7 +1,36 @@
 # RV64M additions to RV32M
 
-opcode mulw    rd rs1 rs2 : 31..25=1 14..12=0 6..2=0x0E 1..0=3
-opcode divw    rd rs1 rs2 : 31..25=1 14..12=4 6..2=0x0E 1..0=3
-opcode divuw   rd rs1 rs2 : 31..25=1 14..12=5 6..2=0x0E 1..0=3
-opcode remw    rd rs1 rs2 : 31..25=1 14..12=6 6..2=0x0E 1..0=3
-opcode remuw   rd rs1 rs2 : 31..25=1 14..12=7 6..2=0x0E 1..0=3
+opcode mulw    rd rs1 rs2 : 31..25=1 14..12=0 6..2=0x0E 1..0=3  | { 
+    rd = (rs1 & 0xFFFFFFFF) * (rs2 & 0xFFFFFFFF) * sign(rs1) * sign(rs2) 
+    if { rd > 0xFFFFFFFF } {
+        rd = 0
+    }
+}
+opcode divw    rd rs1 rs2 : 31..25=1 14..12=4 6..2=0x0E 1..0=3  | {
+    if { rs2 != 0 } {
+        rd = (abs(rs1 & 0xFFFFFFFF) / abs(rs2 & 0xFFFFFFFF)) * sign(rs1) * sign(rs2)
+    } else {
+        rd = 0
+    }
+}
+opcode divuw   rd rs1 rs2 : 31..25=1 14..12=5 6..2=0x0E 1..0=3  | {
+    if { rs2 != 0 } {
+        rd = (abs(rs1 & 0xFFFFFFFF) / abs(rs2 & 0xFFFFFFFF)) * sign(rs1) * sign(rs2)
+    } else {
+        rd = -1
+    }
+} 
+opcode remw    rd rs1 rs2 : 31..25=1 14..12=6 6..2=0x0E 1..0=3  | {
+    if { rs2 != 0 } {
+        rd = ((rs1 & 0xFFFFFFFF) % (rs2 & 0xFFFFFFFF)) * sign(rs1) 
+    } else {
+        rd = rs1
+    }
+}
+opcode remuw   rd rs1 rs2 : 31..25=1 14..12=7 6..2=0x0E 1..0=3  | {
+    if { rs2 > 0 } {
+        rd = abs(rs1 & 0xFFFFFFFF) % abs(rs2 & 0xFFFFFFFF)
+    } else {
+        rd = rs1
+    }
+}

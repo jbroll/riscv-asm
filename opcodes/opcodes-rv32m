@@ -1,9 +1,35 @@
 
-opcode mul     rd rs1 rs2 : 31..25=1 14..12=0 6..2=0x0C 1..0=3            ; # { rd = rs1 * rs2 }
-opcode mulh    rd rs1 rs2 : 31..25=1 14..12=1 6..2=0x0C 1..0=3
-opcode mulhsu  rd rs1 rs2 : 31..25=1 14..12=2 6..2=0x0C 1..0=3
-opcode mulhu   rd rs1 rs2 : 31..25=1 14..12=3 6..2=0x0C 1..0=3
-opcode div     rd rs1 rs2 : 31..25=1 14..12=4 6..2=0x0C 1..0=3            ; # { rd = rs1 / rs2 }
-opcode divu    rd rs1 rs2 : 31..25=1 14..12=5 6..2=0x0C 1..0=3
-opcode rem     rd rs1 rs2 : 31..25=1 14..12=6 6..2=0x0C 1..0=3            ; # { rd = rs1 % rs2 }
-opcode remu    rd rs1 rs2 : 31..25=1 14..12=7 6..2=0x0C 1..0=3
+opcode mul     rd rs1 rs2 : 31..25=1 14..12=0 6..2=0x0C 1..0=3          | { rd = rs1 * rs2 }
+opcode mulh    rd rs1 rs2 : 31..25=1 14..12=1 6..2=0x0C 1..0=3          | { rd = (rs1 * rs2) >> 32 }
+opcode mulhu   rd rs1 rs2 : 31..25=1 14..12=3 6..2=0x0C 1..0=3          | { rd = (unsigned(rs1) * unsigned(rs2)) >> 32 }
+
+opcode mulhsu  rd rs1 rs2 : 31..25=1 14..12=2 6..2=0x0C 1..0=3          | { rd = (unsigned(rs1, 32) * rs2) >> 32 }
+
+opcode div     rd rs1 rs2 : 31..25=1 14..12=4 6..2=0x0C 1..0=3          | { 
+    if { rs2 != 0 } {
+        rd = (abs(rs1) / abs(rs2)) * sign(rs1) * sign(rs2)
+    } else {
+        rd = -1
+    }
+}
+opcode divu    rd rs1 rs2 : 31..25=1 14..12=5 6..2=0x0C 1..0=3          | { 
+    if { rs2 != 0 } {
+        rd = int(abs(rs1 & 0xFFFFFFFF) / abs(rs2 & 0xFFFFFFFF)) 
+    } else {
+        rd = -1
+    }
+}
+opcode rem     rd rs1 rs2 : 31..25=1 14..12=6 6..2=0x0C 1..0=3          | { 
+    if { rs2 != 0 } {
+        rd = (abs(rs1) % abs(rs2)) * sign(rs1) 
+    } else {
+        rd = rs1
+    }
+}
+opcode remu    rd rs1 rs2 : 31..25=1 14..12=7 6..2=0x0C 1..0=3          | { 
+    if { rs2 > 0 } {
+        rd = abs(rs1) % abs(rs2)
+    } else {
+        rd = rs1
+    }
+}

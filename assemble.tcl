@@ -148,6 +148,9 @@ proc nbits { word } {
 }
 
 namespace eval ::tcl::mathfunc {
+    proc sign { value } {
+        if { $value >= 0 } { return 1 } else { return -1 } 
+    }
     proc label { value } {
         if { [info exists ::LABEL($value)] } {
             return [expr { $::LABEL($value) - $::LABEL(.) }]

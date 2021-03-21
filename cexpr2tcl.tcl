@@ -15,6 +15,12 @@ proc expr-regsub { expr { dollar \$ } } {
 
 sugar::syntaxmacro sugarmath { args } {
 
+    if { [xlen] == 32 } {
+        set mask 0xFFFFFFFF
+    } else {
+        set mask 0xFFFFFFFFFFFFFFFF
+    }
+
     # rx = some math expr
     #
     if { [lindex $args 1] eq "=" } {
@@ -22,7 +28,7 @@ sugar::syntaxmacro sugarmath { args } {
         set xx [expr-regsub $xx ""]
         set expr [lrange $args 2 end]
         set expr [expr-regsub $expr]
-        return [list set $xx "\[expr { signed(($expr) & msk2([xlen]-1, 0), [xlen]) }]"]
+        return [list set $xx "\[expr { signed(($expr) & $mask, [xlen]) }]"]
     }
 
     # rx += some math expr
@@ -33,10 +39,10 @@ sugar::syntaxmacro sugarmath { args } {
         set expr "$xx $op [join [lrange $args 2 end]]"
         set expr [expr-regsub $expr]
         set xx [expr-regsub $xx ""]
-        return [list set $xx "\[expr { $expr }]"]
+        return [list set $xx "\[expr { $expr }]"]       ; # Should this look like expr above? (mask and resigned?)
     }
 
-    # some math function call on a line by itself.
+    # some math function call (with side effects) on a line by itself.
     #
     if { [regexp {^ *[a-zA-Z_][a-zA-Z_0-9]*\(.*\) *$} $args] } {
         set expr [expr-regsub $args]

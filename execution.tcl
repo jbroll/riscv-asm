@@ -35,23 +35,25 @@ proc execut_init {} {
             }
 
             if { $Code eq "" } {
-                set Code [list "print \"        \" no code for this op : $op $pars"]
-            }
+                set Code "print \"        \" no code for this op : $op $pars"
+                append Code [cexpr2tcl "\npc += $size" {}]
+            } else {
 
-            # If the opcodes code does not explicitly manage the 
-            # program conter, append code to advance it.
-            #
-            if { ![regexp {pc [+-]?= } $Code] } {
-                set Code [list "[lindex $Code 0]; pc += $size"]
+                # If the opcodes code does not explicitly manage the 
+                # program conter, append code to advance it.
+                #
+                if { ![regexp {pc [+-]?= } $Code] } {
+                    set Code [list "[lindex $Code 0]; pc += $size"]
+                }
+                set Code [cexpr2tcl [join $Code] [dict create size $size xlen [xlen]]]
             }
-            set Code [cexpr2tcl [join $Code] [dict create size $size xlen [xlen]]]
             set decode decode$size
 
             proc exec_${mask}_${bits} { word } [% {
                 upvar ::R R ; upvar ::C C
                 set disa [disa_${mask}_${bits} %word]       ; # Yeah. So just hard code the name of the dissasembler here.
                 lassign %disa op $Pars                      ; # bind the local parameters names to the disassembled values
-                $Code
+                [!string map { % %% } $Code]
             }]
 
             # Register this opcodes execution so that the decoder can find it.
