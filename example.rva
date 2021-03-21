@@ -2,6 +2,12 @@
 .org    0x0100
 
 top:
+    li      x4 88
+    li      x3 10
+    sb      x4 x3 0
+    lb      x5 x3 0
+    ecall
+    lw      x5 x3 0
     srl     ra ra ra
     push    ra a1 a2
     add     a0 a1 a2

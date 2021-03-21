@@ -4,16 +4,40 @@ package require jbr::stack
 
 source $root/cexpr2tcl.tcl
 
-namespace eval ::tcl::mathfunc {
-    proc ld_sbyte { addr } { return 0 }
-    proc ld_shalf { addr } { return 0 }
-    proc ld_sword { addr } { return 0 }
-    proc ld_ubyte { addr } { return 0 }
-    proc ld_uhalf { addr } { return 0 }
+set ::mem [lrepeat 65192 0]
 
-    proc st_byte { value addr } { return 0 }
-    proc st_half { value addr } { return 0 }
-    proc st_word { value addr } { return 0 }
+namespace eval ::tcl::mathfunc {
+    proc ldb { addr } {
+        if { $addr < 0 || $addr >= [llength $::mem] } {
+            error "segv : $addr"
+        }
+        set value [lindex $::mem $addr]
+        #print ldb $addr $value
+        return $value
+    }
+
+    proc ld_sbyte { addr } { expr { signed(ldb($addr), 8) } }
+    proc ld_shalf { addr } { expr { signed(ldb($addr) + (ldb($addr+1) << 8), 16) } }
+    proc ld_sword { addr } { expr { signed(ldb($addr) + (ldb($addr+1) << 8)  + (ldb($addr+2) << 16) + (ldb($addr+3) << 24), 32) } }
+    proc ld_ubyte { addr } { expr { ldb($addr) & 0xFF } }
+    proc ld_uhalf { addr } { expr { (ldb($addr) + (ldb($addr+1) << 8)) & 0xFFFF } }
+
+    proc stb { value addr } {
+        if { $addr < 0 || $addr >= [llength $::mem] } {
+            error "segv : $addr"
+        }
+        set value [expr { $value & 0xFF }]
+        #print stb $addr $value
+        lset ::mem $addr $value
+    }
+    proc st_byte { value addr } { expr { stb($value, $addr) } }
+    proc st_half { value addr } { expr { stb($value, $addr) }
+                                  expr { stb($value >> 8, $addr+1) } }
+    proc st_word { value addr } { expr { stb($value,       $addr)   }
+                                  expr { stb($value >>  8, $addr+1) }
+                                  expr { stb($value >> 16, $addr+2) }
+                                  expr { stb($value >> 24, $addr+3) }
+                                } 
 
     proc unsigned { value { from 31 } } {
         expr { $value & msk2($from, 0) }
@@ -191,13 +215,16 @@ proc execute { verbose args } {
             if { $in eq "" } { set in $prevcmd }
             set prevcmd $in
 
-            switch -- $in {
+            switch -- [lindex $in 0] {
                 w { write_state .state [array get R *] ; continue }
                 r { read_state  .state R               ; continue }
                 d { set format $dec_format             ; continue}
                 x { set format $hex_format             ; continue}
                 q { exit }
                 n { }
+                m { set expr $in
+                    set eval [lrange $::mem {*}[lrange $in 1 end]] 
+                }
                 p { array set R [lpop rstack]          ; continue }
                 default {
                     try {

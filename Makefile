@@ -1,9 +1,9 @@
-.PHONY: all test example clean
+.PHONY: all test example clean test-gas test-suite-64 test-suite-32
 
 all : example
 
 example:
-	./rva.tcl -march rv32gc example.rva
+	./rva.tcl -march rv32g example.rva
 
 clean:
 	rm test/tmp/*
