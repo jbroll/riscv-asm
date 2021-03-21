@@ -259,9 +259,9 @@ proc dis_x2 { word } { return x2 }
 lappend ::optable { op mask bits pars vars }
 
 proc opcode { op args } {
+    lsplit $args args code |
     lsplit $args args mapp ->
     lsplit $args pars Bits :
-    lsplit $mapp mapp code |
 
     set bits [0x [fold { apply { { x y } { expr { $x | bits($y) } } } } 0 $Bits]]    ; # reduce Bits with bits() function
     set mask [0x [fold { apply { { x y } { expr { $x | mask($y) } } } } 0 $Bits]]    ; # reduce Bits with mask() function

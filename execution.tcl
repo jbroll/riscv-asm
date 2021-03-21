@@ -124,7 +124,6 @@ proc read_state { file array } {
     }
 }
 
-
 proc execute { verbose args } {
     set file [lindex $args 0]
     lassign [load $file] text syms

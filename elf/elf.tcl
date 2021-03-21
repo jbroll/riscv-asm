@@ -53,6 +53,8 @@ namespace eval ::elf {
     } { concat [expr { $v }] $s }]]
         
     
+    # The column names of the various header types present in the elf binary file.
+    #
     set v_ident { elfmag0 elfmagName ei_class ei_data ei_version ei_osabi ei_abiversion ei_pad }
     set v_hdr   { e_type e_machine e_version e_entry e_phoff e_shoff e_flags e_ehsize e_phentsize e_phnum e_shentsize e_shnum e_shstrndx }
     set v_sec   { sh_name sh_type sh_flags sh_addr sh_offset sh_size sh_link sh_info sh_addralign sh_entsize }
@@ -65,6 +67,11 @@ namespace eval ::elf {
     set v_note  { n_name n_desc n_type }
     set v_dyn   { d_tag d_value }
 
+    # The column names of the various header types includes names of columns 
+    # created in the custom decode and those above.  These can be selected by
+    # ELF class if they are different between 32 & 64.
+    #
+    # 
     set sectionHeaders [% {
         section { { sh_index $::elf::v_sec                            } }
         rel     { { r_index  $::elf::v_rel   r_sym r_type             } }
@@ -80,6 +87,10 @@ namespace eval ::elf {
         ELFCLASS64-dynsym  { { st_index $::elf::v_sym64 st_shnm st_bind st_type  } }
     }]
 
+    # The info about each elf section by class and data byte order.  These are looked 
+    # up when scanning in binary data.  Notice the special '--ident' section that is
+    # scanned first and is architecture independent.
+    #
     set formats [% {
                              --ident   { size 16   names {$v_ident} scan {cu a3 cu cu cu cu cu cu7} }
         ELFCLASS32-ELFDATA2LSB-header  { size 36   names {$v_hdr}   scan {su su iu iu iu iu iu su su su su su su} }
@@ -125,6 +136,8 @@ namespace eval ::elf {
         ELFCLASS64-ELFDATA2MSB-dynamic { size 16   names {$v_dyn}   scan {Wu Wu} }
     }]
 
+    # A little code snippet to prep for decoding a section.  (Reads the smybol tables)
+    #
     set sectionTypes { symtab dynsym rel rela note dynamic }
     set sectionPreDecode {
         dynsym  { set S(.dynstr) [my readStringTable .dynstr] }
@@ -135,6 +148,8 @@ namespace eval ::elf {
         dynamic {}
     }
 
+    # Each section may have some custom decode looked up by section name and elf class.
+    #
     set sectionDecode {
         dynsym {
             dict import dynsym st_name st_info st_shndx
@@ -421,14 +436,8 @@ namespace eval ::elf {
         zip $names [map name $names { set $name }]
     }
 
-    set et_range { ET_LOOS { 0xfe00 0xfeff } ET_LOPROC { 0xff00 0xffff } }
-    set sh_range { SHT_LOOS { 0x60000000 0x6fffffff } SHT_LOPROC { 0x70000000 0x7fffffff } }
-                
-    set si_range { SHN_LOPROC { 0xff00 0xff1f } SHT_LOOS { 0xff20 0xff3f } }
-    set pr_range { PT_LOOS { 0x60000000 0x6fffffff } PT_LOPROC { 0x70000000 0x7fffffff } }
-    set sb_range { STB_LOOS { 10 12 } STB_LOPROC { 13 15 } }
-    set st_range { STB_LOOS { 10 12 } STB_LOPROC { 13 15 } }
-
+    # Flags are not handled cleanly just now :(
+    #
     set sh_flags { SHF_WRITE    1  SHF_ALLOC 2     SHF_EXECINST 4 SHF_MASKPROC 28:4     }
     set p_flags  { PF_X 1   PF_W 2  PF_R 4         PF_MASKOS 12:8 PF_MASKPROC  28:4     }
 }

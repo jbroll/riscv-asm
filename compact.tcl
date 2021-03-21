@@ -1,4 +1,6 @@
 
+# Create an assembler for compact opcodes
+#
 proc compact { op mask bits mapp pars } {
     if { $mapp eq {} } { return }                                               ; # Build a short op map?
 
