@@ -21,7 +21,7 @@ opcode bgeu    rs1 rs2 bimm12                       : 14..12=7 6..2=0x18 1..0=3 
 opcode jalr     rd rs1 jimm12                       : 14..12=0 6..2=0x19 1..0=3       -> | { tmp = pc + size ; pc = rs1 + jimm12 ; rd = tmp }
 alias  jalr        rs1 jimm12   -> jalr ra rs1 jimm12
 
-opcode jal      rd jimm20                           :         6..2=0x1b 1..0=3        -> | { rd = pc + 4 ; pc += jimm20 }
+opcode jal      rd jimm20                           :         6..2=0x1b 1..0=3        -> | { rd = pc + size ; pc += jimm20 }
 alias  jal         jimm20       -> jal  ra jimm20
 
 opcode lui     rd imm20                             :        6..2=0x0D 1..0=3         -> | { rd = signed(imm20, 32) }

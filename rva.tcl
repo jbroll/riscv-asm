@@ -16,6 +16,7 @@ package require jbr::template
 source $root/elf/elf.tcl
 source $root/compact.tcl
 source $root/decode.tcl
+source $root/memory.tcl
 
 source $root/assemble.tcl
 source $root/execution.tcl
