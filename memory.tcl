@@ -4,12 +4,10 @@ set ::mem [lrepeat 32768 0]
 namespace eval ::tcl::mathfunc {
     proc ldb { addr } {
         set addr [expr { $addr & 0x7FFFFFFF }]
-        print ldb $addr
         if { $addr < 0 || $addr >= [llength $::mem] } {
             error "segv : $addr"
         }
         set value [lindex $::mem $addr]
-        #print ldb $addr $value
         return $value
     }
 
@@ -25,12 +23,10 @@ namespace eval ::tcl::mathfunc {
 
     proc stb { value addr } {
         set addr [expr { $addr & 0x7FFFFFFF }]
-        print stb $addr $value
         if { $addr < 0 || $addr >= [llength $::mem] } {
             error "segv : $addr"
         }
         set value [expr { $value & 0xFF }]
-        #print stb $addr $value
         lset ::mem $addr $value
     }
     proc st_byte { value addr } { expr { stb($value, $addr) } }

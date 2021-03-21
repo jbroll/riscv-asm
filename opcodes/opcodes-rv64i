@@ -15,4 +15,4 @@ opcode sraw    rd rs1 rs2 : 31..25=32 14..12=5 6..2=0x0E 1..0=3         -> | { r
 opcode ld      rd rs1 limm12        : 14..12=3 6..2=0x00 1..0=3         -> | { rd = ld_sdble(rs1 + limm12) } 
 opcode lwu     rd rs1 limm12        : 14..12=6 6..2=0x00 1..0=3         -> | { rd = ld_uword(rs1 + limm12) }
 
-opcode sd      rs1 rs2 simm12       : 14..12=3 6..2=0x08 1..0=3         -> | { st_dble(rs2, rs1 + simm12) } 
+opcode sd      rs2 rs1 simm12       : 14..12=3 6..2=0x08 1..0=3         -> | { st_dble(rs2, rs1 + simm12) } 
