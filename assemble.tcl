@@ -2,7 +2,7 @@
 namespace eval rva {}                   ; # Someday everything will live here
 namespace eval rva::registers {}
 
-set LABEL(.) 0
+set LABEL(.) 0              ; # Dot is just a special label that advances as we assemble
 
 # Catch unknown commands in the .rva file and treat them as labels is they end in ':'
 #

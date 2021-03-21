@@ -6,22 +6,22 @@ source $root/cexpr2tcl.tcl
 
 
 proc execut_init {} {
+    # Define a bunch of regular expressions to substitute for 'well known'
+    # token in the opcode eval mini language.
+    #
     set ::reg-regexp \\m([join $::rclasses |])\\M
     set ::imm-regexp \\m([join $::iclasses |])\\M
     set ::enu-regexp \\m([join $::eclasses |])\\M
     set ::csr-regexp \\m([join [dict keys $::rva::registers::csr] |])\\M
     set ::pcx-regexp \\m([join [list pc {*}$::regNames] |])\\M
-    set ::var-regexp \\m(size|tmp|xlen)\\M
+    set ::var-regexp \\m(tmp)\\M
 
+    # Iitialize the registers and control/status to Zero
     upvar ::R R
     upvar ::C C
     set R(pc) 0
-    foreach reg $::regNames {
-        set R($reg) 0
-    }
-    foreach reg [dict keys $::rva::registers::csr] {
-        set C($reg) 0
-    }
+    foreach reg $::regNames                        { set R($reg) 0 }
+    foreach reg [dict keys $::rva::registers::csr] { set C($reg) 0 }
 
     dict for {op opcode} $::opcode {
         dict with opcode {
@@ -29,27 +29,33 @@ proc execut_init {} {
                 set Code $code
                 set Pars $pars
             } else {
-                set mop [lindex $mapp 0]                    ; # For compact opcodes that map to another instruction. 
-                set Code [dict get $::opcode $mop code]
-                set Pars [dict get $::opcode $mop pars]
+                set mop [lindex $mapp 0]                    ; # For compact opcodes that map to another instruction
+                set Code [dict get $::opcode $mop code]     ; # use the code defined in the other instrustion and the 
+                set Pars [dict get $::opcode $mop pars]     ; # parameter map vector.
             }
 
             if { $Code eq "" } {
                 set Code [list "print \"        \" no code for this op : $op $pars"]
             }
 
+            # If the opcodes code does not explicitly manage the 
+            # program conter, append code to advance it.
+            #
             if { ![regexp {pc [+-]?= } $Code] } {
                 set Code [list "[lindex $Code 0]; pc += $size"]
             }
-            set Code [cexpr2tcl [join $Code]]
+            set Code [cexpr2tcl [join $Code] [dict create size $size xlen [xlen]]]
             set decode decode$size
 
             proc exec_${mask}_${bits} { word } [% {
-                set size $size ; set xlen [xlen] ; upvar ::R R ; upvar ::C C
-                set disa [[dict get %::$decode $mask $bits disa] %word]
-                lassign %disa op $Pars
+                upvar ::R R ; upvar ::C C
+                set disa [disa_${mask}_${bits} %word]       ; # Yeah. So just hard code the name of the dissasembler here.
+                lassign %disa op $Pars                      ; # bind the local parameters names to the disassembled values
                 $Code
             }]
+
+            # Register this opcodes execution so that the decoder can find it.
+            #
             dict set ::opcode $op exec exec_${mask}_${bits}
         }
     }
@@ -61,7 +67,7 @@ proc elf_load_file { file } {
 
     set text ""
     table foreachrow [pipe { $e get segments | table sort ~ p_paddr -integer }] {
-        set p_paddr [expr { $p_paddr & 0xFFFFF }]
+        set p_paddr [expr { $p_paddr & 0x7FFFFFFF }]
         if { $p_type eq "PT_LOAD" } {
             set here [string length $text]
             if { $p_paddr != 0 } {

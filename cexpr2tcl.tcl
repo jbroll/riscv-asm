@@ -58,7 +58,14 @@ sugar::macro if args {
     return $newargs
 }
 
-proc cexpr2tcl { script } {
-    sugar::expand $script
+proc cexpr2tcl { script locals } {
+    set script [sugar::expand $script]
+    dict for {name value} $locals {
+        #print $name $script
+        set script [regsub -all "\\m${name}\\M" $script $value]
+        #print $name $script
+        #print
+    }
+    return $script
 }
 
