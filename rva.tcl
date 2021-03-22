@@ -18,6 +18,7 @@ source $root/compact.tcl
 source $root/decode.tcl
 source $root/memory.tcl
 
+source $root/mathfunc.tcl
 source $root/assemble.tcl
 source $root/execution.tcl
 source $root/disassemble.tcl

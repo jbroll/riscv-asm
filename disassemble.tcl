@@ -1,7 +1,8 @@
 package require pipe
 
 proc disassembler { op mask bits mapp pars } {
-    # generate the disassembler for this opcode
+ 
+    # Generate the disassembler for this opcode
     #
     set body [join [list list $op {*}[lmap p $pars { I "\[dis_${p} \$word]" }]] " "]
 
@@ -9,7 +10,8 @@ proc disassembler { op mask bits mapp pars } {
         set mvals [lassign $mapp mop]                                               ; # Split mop and mvals
 
         if { $::disassemble ne "compact" } {
-            # generate a disassembler that maps to the mopp code.
+            # generate a disassembler that maps to the rv32i code instead of
+            # the compact mnumonic.
             #
             set body [join [list list $mop {*}[lmap p $mvals { I "\[dis_${p} \$word]" }]] " "]
         }
@@ -29,6 +31,9 @@ proc disassemble_op { word } {
         unalias {*}[decode disa $op $::decode2]
     }
 }
+
+# Walk the alias table backwards dropping default args as we go
+#
 proc unalias { args } {
     set disa $args
     set dop [lindex $disa 0]

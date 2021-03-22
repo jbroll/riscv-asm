@@ -9,12 +9,12 @@ proc execut_init {} {
     # Define a bunch of regular expressions to substitute for 'well known'
     # token in the opcode eval mini language.
     #
-    set ::reg-regexp \\m([join $::rclasses |])\\M
-    set ::imm-regexp \\m([join $::iclasses |])\\M
-    set ::enu-regexp \\m([join $::eclasses |])\\M
-    set ::csr-regexp \\m([join [dict keys $::rva::registers::csr] |])\\M
-    set ::pcx-regexp \\m([join [list pc {*}$::regNames] |])\\M
-    set ::var-regexp \\m(tmp)\\M
+    set ::reg-regexp \\m([join $::rclasses |])\\M                           ; # Register place holders
+    set ::imm-regexp \\m([join $::iclasses |])\\M                           ; # Immediate place holders
+    set ::enu-regexp \\m([join $::eclasses |])\\M                           ; # Enumerated place holders
+    set ::csr-regexp \\m([join [dict keys $::rva::registers::csr] |])\\M    ; # CSRs
+    set ::pcx-regexp \\m([join [list pc {*}$::regNames] |])\\M              ; # Registers + pc
+    set ::var-regexp \\m(tmp)\\M                                            ; # The tmp variable!
 
     # Iitialize the registers and control/status to Zero
     upvar ::R R
@@ -49,11 +49,11 @@ proc execut_init {} {
             }
             set decode decode$size
 
-            proc exec_${mask}_${bits} { word } [% {
+            proc exec_${mask}_${bits} { word } [% {         ; # executon proc created with template substitution.
                 upvar ::R R ; upvar ::C C
                 set disa [disa_${mask}_${bits} %word]       ; # Yeah. So just hard code the name of the dissasembler here.
                 lassign %disa op $Pars                      ; # bind the local parameters names to the disassembled values
-                [!string map { % %% } $Code]
+                [!string map { % %% } $Code]                ; # Special %% to escape mod operator from template substitution
             }]
 
             # Register this opcodes execution so that the decoder can find it.

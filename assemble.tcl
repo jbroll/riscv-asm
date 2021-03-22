@@ -71,18 +71,27 @@ proc reg-names { names } {
     zip $names [iota 0 [llength $names]-1]
 }
 
+# Create a register place holder represented by the bit range bits in the instruciton word
+# reg gives the list of machine register names and api gives the list of api alias names.
+#
 proc register { name bits reg api } {
     lappend ::rclasses $name
 
-    if { $::preferApi } {
+    if { $::preferApi } {                                               ; # The registers that appear first are used in disassembly
         rva-enum $name $bits "expected register name found" $api $reg
     } else {
         rva-enum $name $bits "expected register name found" $reg $api
     }
 
+    # Create a function to match this register place holder.  These are used in
+    # the assembler and disassembler to test the validity of a alias or
+    # compressed instruction replacement.
+    #
     proc tcl::mathfunc::match_${name} { value } [% { expr { %value in [dict keys %::rva::registers::$name] } }]
 }
 
+# Parse an immediate value place holder and create assembler parts for it
+#
 proc immediate { name Bits width } {
     lappend ::iclasses $name
 
@@ -114,16 +123,21 @@ proc immediate { name Bits width } {
         lappend disa "((\$value $dop [expr { abs($shift) }]) & $mask)"
         set lo $hi
     }
-    set expr [join $expr |]
-    set disa [join $disa |]
+    set expr [join $expr |]         ; # An expression to convert an immediate value to its in instruction representation
+    set disa [join $disa |]         ; # An expression to extract an immediate value from its instruction representation
 
-    # Create a function that computes the bits of an immediate.
+    # Create a function that computes the instruction bits of an immediate
+    # using the above expression
     # 
     proc ::tcl::mathfunc::$name { value } [% {
         set value [::tcl::mathfunc::label %value]
         return [expr { $expr }]
     }]
 
+    # Create a function that computes the value of an immediate from an
+    # instruction using the above expression.  Most immedaites are wrapped
+    # in 'signed' to sign extend the value after extraction.
+    # 
     if { $width == "unsigned" } {
         proc dis_$name { value } [% {
             expr { $disa }
@@ -134,77 +148,19 @@ proc immediate { name Bits width } {
         }]
     }
 
+    # Check the reversabilit of the immediate function
+    #
     assert-eq [% { ::tcl::mathfunc::$name 0xffffffff }]  \
               [% { ::tcl::mathfunc::$name [dis_$name [::tcl::mathfunc::$name 0xffffffff]] }] "\n\t$expr\n\t$disa"
 
-    # Create a function that checks the validity of an immediate.
+    # Create a function that checks the validity of an immediate for use in
+    # mapping alias and compact instructions.  
     # TODO: Check sign/unsigned value and use abs().
+    #
     set size [exp2 $hi]
     proc tcl::mathfunc::match_$name v [% { expr { label(%v) < $size } }]
 }
 
-proc nbits { word } {
-    expr [join [split [format %b $word] {}] +]
-}
-
-namespace eval ::tcl::mathfunc {
-    proc sign { value } {
-        if { $value >= 0 } { return 1 } else { return -1 } 
-    }
-    proc label { value } {
-        if { [info exists ::LABEL($value)] } {
-            return [expr { $::LABEL($value) - $::LABEL(.) }]
-        }
-        return $value
-    }
-
-    proc msk2 { hi lo } { 0x [expr { (exp2($hi+1) - 1) ^ (exp2($lo) - 1) }] }
-    proc exp2 { n } { return [expr { 1 << $n }] }
-
-    proc enum { name names message } { 
-        if { [dict exists $names $name] } {
-            return [dict get $names $name]
-        } else {
-            error "$message : $name"
-        }
-    }
-
-    proc flag { flag flags message } { 
-        set value 0
-        foreach f [split $flag ""] {
-            if { [dict exists $flags $f] } {
-                set value [expr { $value | [dict get $flags $f] }]
-            } else {
-                error "$message : $f not in $flags"
-            }
-        }
-        return $value
-    }
-
-    proc bits { bits } {
-        lassign [lreverse [regsub -all {[=._]} $bits " "]] b2 n2
-        expr { $b2 << $n2 }
-    }
-    proc mask { bits } {
-        lassign [lreverse [regsub -all {[=._]} $bits " "]] b2 n2 n1
-        expr { msk2($n1 eq "" ? $n2 : $n1, $n2) }
-    }
-
-    proc match_x0   rd { expr { $rd eq "x0" || $rd eq "zero" } }
-    proc match_zero rd { expr { $rd eq "x0" || $rd eq "zero" } }
-    proc match_x1   rd { expr { $rd eq "x1" || $rd eq "ra"   } }
-    proc match_ra   rd { expr { $rd eq "x1" || $rd eq "ra"   } }
-    proc match_x2   rd { expr { $rd eq "x2" || $rd eq "sp"   } }
-    proc match_sp   rd { expr { $rd eq "x2" || $rd eq "sp"   } }
-    proc match_0    vx { expr { $vx ==   0 } }
-    proc match_iorw vx { expr { $vx eq "iorw" } }
-
-    proc signed { value bits } {
-        expr { ($value & msk2($bits-1, 0)) - (($value & exp2($bits-1)) == 0 ? 0 : exp2($bits)) }
-    }
-
-    namespace export msk2 exp2
-}
 namespace import ::tcl::mathfunc::msk2
 namespace import ::tcl::mathfunc::exp2
 
@@ -261,6 +217,12 @@ proc dis_x2 { word } { return x2 }
 
 lappend ::optable { op mask bits pars vars }
 
+# Define an opcode.
+#
+# Two manditory and two optional parts
+#
+# mnumonic args...   :  bit definition  -> compact to rv32i mapping | { semanitcs in instruciton mini language }
+#  
 proc opcode { op args } {
     lsplit $args args code |
     lsplit $args args mapp ->
@@ -269,18 +231,19 @@ proc opcode { op args } {
     set bits [0x [fold { apply { { x y } { expr { $x | bits($y) } } } } 0 $Bits]]    ; # reduce Bits with bits() function
     set mask [0x [fold { apply { { x y } { expr { $x | mask($y) } } } } 0 $Bits]]    ; # reduce Bits with mask() function
     set vars [join [lmap p $pars { I \$$p }] " "]                                    ; # variable expansion for assemble comment
-    set expr [join [list $bits {*}[lmap p $pars { I "${p}(\$$p)" }]] |]              ; # build bits expression
-    foreach arg $pars {
-        if { [info procs ::tcl::mathfunc::$arg] == "" } {
+    set expr [join [list $bits {*}[lmap p $pars { I "${p}(\$$p)" }]] |]              ; # build bits expression to assemble the opcode 
+                                                                                     ; # and its args into an instruciton word
+    foreach arg $pars {                                                     ; # Check that each param place holder has a conversion .
+        if { [info procs ::tcl::mathfunc::$arg] == "" } {                   ; # function 
             eprint "missing argument type in op $op : $arg"
         }
     }
 
-    if { [info proc $op] ne "" } {
+    if { [info proc $op] ne "" } {                                          ; # Warn if the mnumonic is already defined
         eprint redefine $op $args
         eprint existing op $op [dict get ::opcode $op]
     }
-    proc .$op $pars "expr { $expr }"                                                ; # a proc to compute the opcode value
+    proc .$op $pars "expr { $expr }"                                                ; # a proc to compute the opcode instruction value
     proc  $op $pars "assemble \[.$op $vars] \"[concat $op {*}$vars]\""              ; # a proc to assmeble the opcode at .
 
     dict set ::opcode $op op   $op                                                  ; # save some info about op
@@ -292,8 +255,10 @@ proc opcode { op args } {
     dict set ::opcode $op mapp $mapp
     dict set ::opcode $op size [expr { ( $bits & 0x03 ) == 0x3 ? 4 : 2 }]
 
-    lappend ::optable [list $op $mask $bits $pars $vars]
+    lappend ::optable [list $op $mask $bits $pars $vars]                    ; # Make a table to output on request
 
+    # Build the compact and disassembler parts of opcode translation
+    #
     compact      $op $mask $bits $mapp $pars
     disassembler $op $mask $bits $mapp $pars
 }
