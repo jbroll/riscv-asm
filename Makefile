@@ -3,9 +3,11 @@
 all : example
 
 test:
+	$(MAKE) test-gas
+
+test-suite:
 	$(MAKE) test-suite-32
 	$(MAKE) test-suite-64
-	$(MAKE) test-gas
 
 example:
 	./rva.tcl -march rv32gc example.rva | tee example.lst
