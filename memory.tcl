@@ -51,7 +51,9 @@ namespace eval ::tcl::mathfunc {
         expr { $value & msk2($from, 0) }
     }
 
-    namespace export ld_uword
+    namespace export ld_uword st_word st_half
 }
 namespace import ::tcl::mathfunc::ld_uword
+namespace import ::tcl::mathfunc::st_word
+namespace import ::tcl::mathfunc::st_half
 

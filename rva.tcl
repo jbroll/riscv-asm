@@ -18,6 +18,7 @@ source $root/compact.tcl
 source $root/decode.tcl
 source $root/memory.tcl
 
+source $root/labels.tcl
 source $root/mathfunc.tcl
 source $root/assemble.tcl
 source $root/execution.tcl
@@ -145,6 +146,9 @@ proc main { args } {
 
     include macros.rva
 
+    execut_init
+    decode_init
+    
     if { $showtable } {
         print [table justify $::optable]
         exit
@@ -155,13 +159,10 @@ proc main { args } {
     }
     if { $execute eq yes } {
         set ::unalias no
-        execut_init
-        decode_init
         execute $verbose {*}$files
         exit
     }
     if { $::disassemble ne no } {
-        decode_init
         disassemble {*}$files
         exit
     }
@@ -173,6 +174,7 @@ proc main { args } {
             source $file
         }
     }
+    #print [join [disa_block 0 0 $::LABEL(.) {} [binary format c* $::mem]] \n]
 }
 
 main {*}$argv

@@ -17,13 +17,13 @@ proc decode_init { args } {
     #
     dict for {op opcode} $::opcode {                            ; # 2 level lookup table  mask --> bits --> opcode
         dict with opcode {
-            if { ($bits & 0x00003) == 0x0003 } {
+            if { ($bits & 0x00003) == 0x0003 || (![iset c] && $bits == 0)} {
                 dict lappend ::decode4 $mask $bits $opcode
             } else {
                 if { [iset c] } {
                     dict lappend ::decode2 $mask $bits $opcode
                 } else {
-                    error "2 byte opcode definition but compressed instrucitons are not enabled"
+                    error "2 byte opcode definition but compressed instrucitons are not enabled : $op $opcode"
                 }
             }
         }
@@ -44,7 +44,11 @@ proc decode { type word decode } {
         set bits [0x [expr { $word & $mask }]]                  ; # compute the significant bits in the op
 
         if { [dict exists $opcodes $bits] } {                   ; # Look up the op in the mask subtable
-            return [[dict get $opcodes $bits $type] $word]
+            try {
+                return [[dict get $opcodes $bits $type] $word]
+            } on error e {
+                error " cannot lookup opcode $mask $bits $type"
+            }
         }
     }
     return  unimp

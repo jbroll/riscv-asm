@@ -3,12 +3,6 @@ namespace eval ::tcl::mathfunc {
     proc sign { value } {
         if { $value >= 0 } { return 1 } else { return -1 } 
     }
-    proc label { value } {
-        if { [info exists ::LABEL($value)] } {
-            return [expr { $::LABEL($value) - $::LABEL(.) }]
-        }
-        return $value
-    }
 
     proc msk2 { hi lo } { 0x [expr { (exp2($hi+1) - 1) ^ (exp2($lo) - 1) }] }
     proc exp2 { n } { return [expr { 1 << $n }] }

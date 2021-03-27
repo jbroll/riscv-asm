@@ -2,28 +2,6 @@
 namespace eval rva {}                   ; # Someday everything will live here
 namespace eval rva::registers {}
 
-set LABEL(.) 0              ; # Dot is just a special label that advances as we assemble
-
-# Catch unknown commands in the .rva file and treat them as labels is they end in ':'
-#
-proc unknown { args } {
-    switch -regex -- $args {
-        {[0-9a-zA-Z_]+:} { : [string range $args 0 end-1] }
-        default {
-            error "unknown command : $args"
-        }
-    }   
-}
-
-# Introduce a label in the .rva file
-#
-proc : { name args } {
-    set ::LABEL($name) $::LABEL(.)
-    if { [llength $args] } {
-        {*}$args
-    }
-}
-
 proc _enum { func name bits message args } {
     set registers [concat {*}$args]
     set ::rva::registers::$name [lmap x $registers { expr { [string first 0x $x] == 0 ? $x : [I $x] } }]
@@ -130,7 +108,7 @@ proc immediate { name Bits width } {
     # using the above expression
     # 
     proc ::tcl::mathfunc::$name { value } [% {
-        set value [::tcl::mathfunc::label %value]
+        set value [::tcl::mathfunc::label %value $name]
         return [expr { $expr }]
     }]
 
@@ -158,7 +136,7 @@ proc immediate { name Bits width } {
     # TODO: Check sign/unsigned value and use abs().
     #
     set size [exp2 $hi]
-    proc tcl::mathfunc::match_$name v [% { expr { label(%v) < $size } }]
+    proc tcl::mathfunc::match_$name v [% { expr { abs(match_label(%v)) < $size } }]
 }
 
 namespace import ::tcl::mathfunc::msk2
@@ -268,9 +246,11 @@ proc assemble { opcode instr } {
 
     if { ($opcode & 0x00000003) == 0x00000003 } { 
         print [format " %05d %04X %08X   %s"     $line $::LABEL(.) [expr { $opcode & 0xffffffff }] $instr]
+        st_word $opcode $::LABEL(.)
         incr ::LABEL(.) 4
     } else {
         print [format " %05d %04X %04X       %s" $line $::LABEL(.) [expr { $opcode & 0x0000ffff }] $instr]
+        st_half $opcode $::LABEL(.)
         incr ::LABEL(.) 2
     }
 }
