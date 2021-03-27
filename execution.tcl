@@ -39,7 +39,7 @@ proc execut_init {} {
                 append Code [cexpr2tcl "\npc += $size" {}]
             } else {
 
-                # If the opcodes code does not explicitly manage the 
+                # If the opcodes code does not explicitly set the 
                 # program conter, append code to advance it.
                 #
                 if { ![regexp {pc [+-]?= } $Code] } {
@@ -49,11 +49,13 @@ proc execut_init {} {
             }
             set decode decode$size
 
+            set disa [dict get $::opcode $op disa]
+
             proc exec_${mask}_${bits} { word } [% {         ; # executon proc created with template substitution.
                 upvar ::R R ; upvar ::C C
-                set disa [disa_${mask}_${bits} %word]       ; # Yeah. So just hard code the name of the dissasembler here.
+                set disa [$disa %word]                      ; # disasemle the instruction to get the register and offset values
                 lassign %disa op $Pars                      ; # bind the local parameters names to the disassembled values
-                [!string map { % %% } $Code]                ; # Special %% to escape mod operator from template substitution
+                [!string map { % %% } $Code]                ; # map % to %% to escape mod operator from template substitution
             }]
 
             # Register this opcodes execution so that the decoder can find it.
