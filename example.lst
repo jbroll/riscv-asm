@@ -1,22 +1,19 @@
- 00005 0000 4501       addi x10 x0 0
- 00006 0002 FFFD       bne a5 x0 top
- 00007 0004 05800213   addi x4 x0 88
- 00008 0008 41A9       addi x3 x0 10
- 00009 000A 00418023   sb x4 x3 0
- 00010 000E 00018283   lb x5 x3 0
- 00011 0012 00000073   ecall
- 00012 0016 0001A283   lw x5 x3 0
- 00013 001A 0010D0B3   srl ra ra ra
- 00014 001E C206       sw ra sp 4
- 00014 0020 C42E       sw a1 sp 8
- 00014 0022 C632       sw a2 sp 12
- 00014 0024 0141       addi sp sp 16
- 00015 0026 00C58533   add a0 a1 a2
- 00016 002A FFFFF297   auipc t0 top
- 00016 002E 02C9       addi t0 t0 top
- 00017 0030 567E       lw a2 sp -4
- 00017 0032 55EE       lw a1 sp -8
- 00017 0034 50DE       lw ra sp -12
- 00017 0036 1141       addi sp sp -16
- 00018 0038 B7E1       jal zero top
- 00019 003A 8082       jalr x0 x1 0
+ 00004 0000 C22E       sw a1 sp 4
+ 00004 0002 C42E       sw a1 sp 8
+ 00004 0004 C632       sw a2 sp 12
+ 00004 0006 0131       addi sp sp 12
+ 00005 0008 4501       addi x10 x0 0
+ 00007 000A 00058063   beq a1 x0 2f
+ 00008 000E 157D       addi a0 a0 -1
+ 00009 0010 00051063   bne a0 x0 1b
+ 00010 0014 000000E7   jalr x1 x0 here
+ 00012 0018 05800213   addi x4 x0 88
+ 00013 001C 41A9       addi x3 x0 10
+ 00014 001E 00418023   sb x4 x3 0
+ 00015 0022 00018283   lb x5 x3 0
+ 00016 0026 567E       lw a2 sp -4
+ 00016 0028 55EE       lw a1 sp -8
+ 00016 002A 55DE       lw a1 sp -12
+ 00016 002C 1151       addi sp sp -12
+ 00017 002E 8082       jalr x0 x1 0
+ 00020 0030 0101       addi sp sp 0

@@ -11,6 +11,7 @@ immediate  uimm5    19..15                  unsigned
 
 opcode unimp                                        : 31..0=0
 opcode beq     rs1 rs2 bimm12                       : 14..12=0 6..2=0x18 1..0=3       | { if { rs1 == rs2 } { pc += bimm12 } else { pc += size } }
+alias beqz rs1 bimm12 -> beq rs1 x0 bimm12
 opcode bne     rs1 rs2 bimm12                       : 14..12=1 6..2=0x18 1..0=3       | { if { rs1 != rs2 } { pc += bimm12 } else { pc += size } }
 alias bnez rs1 bimm12 -> bne rs1 x0 bimm12
 opcode blt     rs1 rs2 bimm12                       : 14..12=4 6..2=0x18 1..0=3       | { if { rs1 <  rs2 } { pc += bimm12 } else { pc += size } }

@@ -6,10 +6,10 @@ macro la { rd symbol } {
 
 proc push { args } {
     lpush ::PUSHED $args
-    set i 4
+    set i 0
     foreach arg $args {
-        sw $arg sp $i
         incr i 4
+        sw $arg sp $i
     }
     addi sp sp $i
 }
@@ -18,21 +18,23 @@ proc pop { args } {
     if { [llength $args] == 0 } {
         set args [lpop ::PUSHED]
     }
-    set i -4
+    set i 0
     foreach arg [lreverse $args] {
-        lw $arg sp $i
         incr i -4
+        lw $arg sp $i
     }
     addi sp sp $i
 }
 
 macro jmp { tgt }   { jal zero tgt }
 
+alias callr rs1 imm  -> jalr ra rs1 imm
+alias call imm  -> jalr ra x0 imm
 alias jr r -> jalr x0 r 0
 alias ret -> jr ra
 
-macro inc { rd }    { add rd rd  1 }
-macro dec { rd }    { add rd rd -1 }
+macro inc { rd }    { addi rd rd  1 }
+macro dec { rd }    { addi rd rd -1 }
 macro mv  { rd rs } { addi rd rs 0 }
 macro not { rd rs } { xori rd rs -1 }
 alias not rd -> not rd rd

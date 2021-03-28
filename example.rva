@@ -1,21 +1,22 @@
 
 .org    0x0000
 
-top:
+    push    a1 a1 a2
     li      x10 0
-    bne     a5 x0 top
+1:
+    beqz    a1 2f
+    dec     a0
+    bne     a0 x0 1b
+    call    here
+2:
     li      x4 88
     li      x3 10
     sb      x4 x3 0
     lb      x5 x3 0
-    ecall
-    lw      x5 x3 0
-    srl     ra ra ra
-    push    ra a1 a2
-    add     a0 a1 a2
-    la      t0 top
     pop
-    jmp     top
     ret
+here:
+    
+    pop
 
     
