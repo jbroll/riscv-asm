@@ -57,3 +57,6 @@ namespace import ::tcl::mathfunc::ld_uword
 namespace import ::tcl::mathfunc::st_word
 namespace import ::tcl::mathfunc::st_half
 
+proc memory { start end } {
+    binary format c* [lrange $::mem $start $end]
+}

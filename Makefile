@@ -3,6 +3,7 @@
 all : example
 
 test:
+	./test.tcl
 	$(MAKE) test-gas
 
 test-suite:

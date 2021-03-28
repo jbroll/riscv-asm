@@ -30,7 +30,7 @@ proc include { file } {
     source $::root/$file
 }
 
-proc .org { org } { set ::LABEL(.) $org }
+proc .org { org } { setlabel . $org }
 proc .global { args } {}
 proc .text { args } {}
 
@@ -174,7 +174,7 @@ proc main { args } {
             source $file
         }
     }
-    #print [join [disa_block 0 0 $::LABEL(.) {} [binary format c* $::mem]] \n]
+    #print [join [disa_block 0 0 [getlabel .] {} [binary format c* $::mem]] \n]
 }
 
 main {*}$argv

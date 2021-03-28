@@ -1,26 +1,22 @@
  00005 0000 4501       addi x10 x0 0
- 00006 0002 0541       c.addi x10 16
- 00007 0004 FFF5       bne a5 x0 top
- 00008 0006 1501       c.addi x10 32
- 00009 0008 6301       c.lui x6 32
- 00010 000A 63C1       c.lui x7 65536
- 00011 000C 05800213   addi x4 x0 88
- 00012 0010 41A9       addi x3 x0 10
- 00013 0012 00418023   sb x4 x3 0
- 00014 0016 00018283   lb x5 x3 0
- 00015 001A 00000073   ecall
- 00016 001E 0001A283   lw x5 x3 0
- 00017 0022 0010D0B3   srl ra ra ra
- 00018 0026 C206       sw ra sp 4
- 00018 0028 C42E       sw a1 sp 8
- 00018 002A C632       sw a2 sp 12
- 00018 002C 0141       addi sp sp 16
- 00019 002E 00C58533   add a0 a1 a2
- 00020 0032 FFFFF297   auipc t0 top
- 00020 0036 02A9       addi t0 t0 top
- 00021 0038 567E       lw a2 sp -4
- 00021 003A 55EE       lw a1 sp -8
- 00021 003C 50DE       lw ra sp -12
- 00021 003E 1141       addi sp sp -16
- 00022 0040 B7C1       jal zero top
- 00023 0042 8082       jalr x0 x1 0
+ 00006 0002 FFFD       bne a5 x0 top
+ 00007 0004 05800213   addi x4 x0 88
+ 00008 0008 41A9       addi x3 x0 10
+ 00009 000A 00418023   sb x4 x3 0
+ 00010 000E 00018283   lb x5 x3 0
+ 00011 0012 00000073   ecall
+ 00012 0016 0001A283   lw x5 x3 0
+ 00013 001A 0010D0B3   srl ra ra ra
+ 00014 001E C206       sw ra sp 4
+ 00014 0020 C42E       sw a1 sp 8
+ 00014 0022 C632       sw a2 sp 12
+ 00014 0024 0141       addi sp sp 16
+ 00015 0026 00C58533   add a0 a1 a2
+ 00016 002A FFFFF297   auipc t0 top
+ 00016 002E 02C9       addi t0 t0 top
+ 00017 0030 567E       lw a2 sp -4
+ 00017 0032 55EE       lw a1 sp -8
+ 00017 0034 50DE       lw ra sp -12
+ 00017 0036 1141       addi sp sp -16
+ 00018 0038 B7E1       jal zero top
+ 00019 003A 8082       jalr x0 x1 0
