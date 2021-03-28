@@ -21,39 +21,39 @@ namespace eval ::tcl::mathfunc {
     proc ld_uhalf { addr } { expr { (ldb($addr) + (ldb($addr+1) << 8)) & 0xFFFF } }
     proc ld_uword { addr } { expr { (ldb($addr) + (ldb($addr+1) << 8)  + (ldb($addr+2) << 16) + (ldb($addr+3) << 24)) & 0xFFFFFFFF } }
 
-    proc stb { value addr } {
+    proc stb { addr value } {
         set addr [expr { $addr & 0x7FFFFFFF }]
         if { $addr < 0 || $addr >= [llength $::mem] } {
             error "segv : $addr"
         }
-        set value [expr { $value & 0xFF }]
-        lset ::mem $addr $value
+        lset ::mem $addr [expr { $value & 0xFF }]
     }
-    proc st_byte { value addr } { expr { stb($value, $addr) } }
-    proc st_half { value addr } { expr { stb($value, $addr) }
-                                  expr { stb($value >> 8, $addr+1) } }
-    proc st_word { value addr } { expr { stb($value,       $addr)   }
-                                  expr { stb($value >>  8, $addr+1) }
-                                  expr { stb($value >> 16, $addr+2) }
-                                  expr { stb($value >> 24, $addr+3) }
+    proc st_byte { addr value } { expr { stb($addr,   $value)      } }
+    proc st_half { addr value } { expr { stb($addr,   $value)      }
+                                  expr { stb($addr+1, $value >> 8) } }
+    proc st_word { addr value } { expr { stb($addr,   $value      ) }
+                                  expr { stb($addr+1, $value >>  8) }
+                                  expr { stb($addr+2, $value >> 16) }
+                                  expr { stb($addr+3, $value >> 24) }
                                 } 
-    proc st_dble { value addr } { expr { stb($value,       $addr)   }
-                                  expr { stb($value >>  8, $addr+1) }
-                                  expr { stb($value >> 16, $addr+2) }
-                                  expr { stb($value >> 24, $addr+3) }
-                                  expr { stb($value >> 32, $addr+4) }
-                                  expr { stb($value >> 40, $addr+5) }
-                                  expr { stb($value >> 48, $addr+6) }
-                                  expr { stb($value >> 56, $addr+7) }
+    proc st_dble { addr value } { expr { stb($addr,   $value)       }
+                                  expr { stb($addr+1, $value >>  8) }
+                                  expr { stb($addr+2, $value >> 16) }
+                                  expr { stb($addr+3, $value >> 24) }
+                                  expr { stb($addr+4, $value >> 32) }
+                                  expr { stb($addr+5, $value >> 40) }
+                                  expr { stb($addr+6, $value >> 48) }
+                                  expr { stb($addr+7, $value >> 56) }
                                 } 
 
     proc unsigned { value { from 31 } } {
         expr { $value & msk2($from, 0) }
     }
 
-    namespace export ld_uword st_word st_half
+    namespace export ld_uword ld_uhalf st_word st_half
 }
 namespace import ::tcl::mathfunc::ld_uword
+namespace import ::tcl::mathfunc::ld_uhalf
 namespace import ::tcl::mathfunc::st_word
 namespace import ::tcl::mathfunc::st_half
 

@@ -248,11 +248,11 @@ proc assemble { opcode instr } {
     set dot [dot]
     if { ($opcode & 0x00000003) == 0x00000003 } { 
         print [format " %05d %04X %08X   %s"     $line $dot [expr { $opcode & 0xffffffff }] $instr]
-        st_word $opcode $dot
+        st_word $dot $opcode
         incrdot 4
     } else {
         print [format " %05d %04X %04X       %s" $line $dot [expr { $opcode & 0x0000ffff }] $instr]
-        st_half $opcode $dot
+        st_half $dot $opcode
         incrdot 2
     }
 }

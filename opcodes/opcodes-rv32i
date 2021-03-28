@@ -62,9 +62,9 @@ opcode lw      rd rs1  limm12                       : 14..12=2 6..2=0x00 1..0=3 
 opcode lbu     rd rs1  limm12                       : 14..12=4 6..2=0x00 1..0=3       | { rd = ld_ubyte(rs1 + limm12) }
 opcode lhu     rd rs1  limm12                       : 14..12=5 6..2=0x00 1..0=3       | { rd = ld_uhalf(rs1 + limm12) }
 
-opcode sb      rs2 rs1 simm12                       : 14..12=0 6..2=0x08 1..0=3       | { st_byte(rs2, rs1 + simm12) }
-opcode sh      rs2 rs1 simm12                       : 14..12=1 6..2=0x08 1..0=3       | { st_half(rs2, rs1 + simm12) }
-opcode sw      rs2 rs1 simm12                       : 14..12=2 6..2=0x08 1..0=3       | { st_word(rs2, rs1 + simm12) }
+opcode sb      rs2 rs1 simm12                       : 14..12=0 6..2=0x08 1..0=3       | { st_byte(rs1 + simm12, rs2) }
+opcode sh      rs2 rs1 simm12                       : 14..12=1 6..2=0x08 1..0=3       | { st_half(rs1 + simm12, rs2) }
+opcode sw      rs2 rs1 simm12                       : 14..12=2 6..2=0x08 1..0=3       | { st_word(rs1 + simm12, rs2) }
 
 opcode fence   pred succ         : 31..28=0  19..15=0 14..12=0 11..7=0 6..2=0x03 1..0=3                    -> | { }
 alias fence -> fence iorw iorw

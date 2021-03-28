@@ -36,11 +36,18 @@ test::suite riscv-asm {
         setup {
             source memory.tcl
         }
-        case {
-            st_word 0x12345678 0
-            eq [ld_uword 0] 0x12345678     "read back from memory"
+        case-word {
+            st_word 0 0x12345678
+            eq [ld_uword 0] 0x12345678     "read word back from memory"
             binary scan [memory 0 3] i word
             eq $word 0x12345678            "format and scan memory"
+        }
+        case-half {
+            st_half 6 0x5678
+            eq [ld_uhalf 6] 0x5678          "read half back from memory"
+            eq [ld_uhalf 4] 0x0             "read half back from memory 0 before"
+            eq [ld_uhalf 8] 0x0             "read half back from memory 0 after"
+
         }
     }
  

@@ -46,13 +46,13 @@ proc : { name args } {
     # value of the label and store it back to address
     #
     foreach label [dict get? $::labels $name] {
-        dict with $label {
+        dict with label {
             set word [ld_uword $addr]
-            set word [expr { $word | [::tcl::mathfunc::$type $$dot] }]
+            set word [expr { $word | [::tcl::mathfunc::$type $dot] }]
             if { $word & 0x03 } {
-                st_uword $addr $word
+                st_word $addr $word
             } else {
-                st_uhalf $addr $word
+                st_half $addr $word
             }
         }
     }

@@ -125,7 +125,7 @@ proc disa_block { here addr leng syms data } {
             set size 2
         }
 
-        lappend lines "[format "%04x %0-*x %*s     %-8s" $addr $wide $word $skip "" $dop] $dargs"
+        lappend lines "[format "%04x %0-*X %*s     %-8s" $addr $wide $word $skip "" $dop] $dargs"
 
         incr addr $size
         incr here $size
