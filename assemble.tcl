@@ -16,8 +16,7 @@ proc _enum { func name bits message args } {
             try {
                 dict get %::rva::registers::${name}_rev [expr { ( %value & $mask ) >> $to }]
             } on error e {
-                print %e : %::rva::registers::${name}_rev
-                exit
+                error "enum $name %value : %e : %::rva::registers::${name}_rev"
             }
         }]
     } else {
@@ -241,17 +240,21 @@ proc opcode { op args } {
     disassembler $op $mask $bits $mapp $pars
 }
 
-proc assemble { opcode instr } {
-    set line 1
+proc line { addr source } {
+    set line 0
     try { set line [dict get [info frame 3] line] } on error e {}
 
+    dict set ::LINES $addr [list $line $source]
+}
+
+proc assemble { opcode instr } {
     set dot [dot]
+    line $dot $instr
+
     if { ($opcode & 0x00000003) == 0x00000003 } { 
-        print [format " %05d %04X %08X   %s"     $line $dot [expr { $opcode & 0xffffffff }] $instr]
         st_word $dot $opcode
         incrdot 4
     } else {
-        print [format " %05d %04X %04X       %s" $line $dot [expr { $opcode & 0x0000ffff }] $instr]
         st_half $dot $opcode
         incrdot 2
     }

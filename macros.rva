@@ -4,6 +4,79 @@ macro la { rd symbol } {
     addi  rd rd symbol
 }
 
+proc .org { org } { 
+    switch [string index $org 0] {
+        + {  dot [expr { [dot] + $org }] }
+        - {  dot [expr { [dot] + $org }] }
+        default { setlabel . $org }
+    }
+}
+
+proc .global { args } {}
+proc .text { args } {
+    set mode rx
+}
+proc .data { args } {
+    set mode rw
+}
+
+macro .align { n } {
+    incrdot [expr { [dot] % n }]
+}
+
+macro _string { str } {
+    foreach char [split str ""] {
+        _db [scan $char %c]
+    }
+}
+
+macro _db { args } {
+    foreach byte args {
+        st_byte [dot] $byte
+        incrdot 1
+    }
+}
+
+macro .string { str } {
+    eprint .string $str
+    line [dot] ".string $str"
+    _string str
+}
+
+macro .asciz { str } {
+    line [dot] ".asciz str"
+    _string str
+    _db 0
+}
+
+macro .db { args } {
+    line [dot] ".db args"
+    _db {*}args
+}
+
+macro .dh { args } {
+    line [dot] ".dh args"
+    foreach word args {
+        st_word [dot] $word
+        incrdot 2
+    }
+}
+
+macro .dw { args } {
+    line [dot] ".dw args"
+    foreach word args {
+        st_word [dot] $word
+        incrdot 4
+    }
+}
+
+macro .dd { args } {
+    foreach dble args {
+        st_word [dot] $dble
+        incrdot 8
+    }
+}
+
 proc push { args } {
     lpush ::PUSHED $args
     set i 0

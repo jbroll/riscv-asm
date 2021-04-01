@@ -14,6 +14,8 @@ package require jbr::string
 package require jbr::template
 
 source $root/elf/elf.tcl
+source $root/loadfile.tcl
+
 source $root/compact.tcl
 source $root/decode.tcl
 source $root/memory.tcl
@@ -29,10 +31,6 @@ source $root/disassemble.tcl
 proc include { file } {
     source $::root/$file
 }
-
-proc .org { org } { setlabel . $org }
-proc .global { args } {}
-proc .text { args } {}
 
 # A convenience proc to check an instruction set request.
 #
@@ -174,7 +172,13 @@ proc main { args } {
             source $file
         }
     }
-    #print [join [disa_block 0 0 [getlabel .] {} [binary format c* $::mem]] \n]
+    if { [llength $::labels] } {
+        foreach {name refs} $::labels {
+            eprint "undefined label $name referenced at $refs"
+        }
+        exit 1
+    }
+    print [join [disa_block 0 0 [dot] $::LABEL [binary format c* $::mem]] \n]
 }
 
 main {*}$argv

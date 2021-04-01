@@ -47,7 +47,7 @@ proc decode { type word decode } {
             try {
                 return [[dict get $opcodes $bits $type] $word]
             } on error e {
-                error " cannot lookup opcode $mask $bits $type"
+                error " cannot lookup opcode $mask $bits $type : $e"
             }
         }
     }

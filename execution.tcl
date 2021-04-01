@@ -65,52 +65,6 @@ proc execut_init {} {
     }
 }
 
-proc elf_load_file { file } {
-
-    set e [elf::elf create e $file]
-
-    set text ""
-    table foreachrow [pipe { $e get segments | table sort ~ p_paddr -integer }] {
-        set p_paddr [expr { $p_paddr & 0x7FFFFFFF }]
-        if { $p_type eq "PT_LOAD" } {
-            set here [string length $text]
-            if { $p_paddr != 0 } {
-                append text [binary format @[expr { $p_paddr - $here -1 }]c 0]
-            }
-            append text [$e getSegmentDataByIndex $p_index]
-        }
-    }
-    set syms [load_syms $e]
-
-    return [list $text $syms]
-}
-
-proc load { fname } {
-
-    switch [file extension $fname] {
-        .lst { 
-            set formats { 4 s 8 i }
-            with file = [open $fname r] { set lines [read $file] }
-
-            set data ""
-            foreach line [split $lines \n] {
-                set op [lindex $line 2]
-                if { $op eq "" } { continue }
-                append data [binary format [dict get $formats [string length $op]] 0x$op]
-            }
-            return [list $data {}]
-        }
-        .bin {
-            with file = [open $fname r] { set text [read $file] }
-            return [list $text {}]
-        }
-        .elf -
-        default {
-            return [elf_load_file $fname]
-        }
-    }
-}
-
 proc format-regs { regs format } {
     lsort [lmap { name value } $regs { format "% 4s: $format" $name $value }]
 }
@@ -130,14 +84,18 @@ proc read_state { file array } {
 
 proc execute { verbose args } {
     set file [lindex $args 0]
-    lassign [load $file] text syms
+    set segments [lassign [load $file] syms]
 
-    binary scan $text cu* bytes 
-    set i 0
-    foreach byte $bytes {
-        lset ::mem $i $byte
-        incr i
+    foreach { flags addr segment} $segments {             # Load the returned segments in to memory
+        set addr [expr { $addr & 0x7FFFFFFF }]
+        binary scan $segment cu* bytes 
+
+        foreach byte $bytes {
+            lset ::mem $addr $byte
+            incr addr
+        }
     }
+    set memmax $addr
 
     set ::R(pc) 0
     set next 0
@@ -159,7 +117,7 @@ proc execute { verbose args } {
     upvar ::R R
     upvar ::C C
 
-    while { $R(pc) < [string length $text] && $R(pc) >= 0 } {
+    while { $R(pc) <= $memmax && $R(pc) >= 0 } {
         set word [ld_uword $R(pc)]
 
         set cycle [expr [clock micro] - $prev]
@@ -168,7 +126,7 @@ proc execute { verbose args } {
             term clear
 
             set pc $R(pc)
-            set disa [disa_block $pc $pc [expr $pc + 16*4] $syms $text]
+            set disa [disa_block $pc $pc [expr $pc + 16*3] $syms [memory $pc [expr $pc + 16*3]]]
             lappend disa {} {} {} {} {} 
 
             set dargs [lassign [decode_op disa [0x $word]] dop]

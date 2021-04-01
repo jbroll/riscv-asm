@@ -77,56 +77,62 @@ proc load_syms { elf } {
     return $syms
 }
 
-proc disa_section { elf section } {
-
-    set syms [load_syms $elf]
-
-    set head [$elf getSectionHeaderByName $section]
-    set addr [dict get $head sh_addr]
-    set data [$elf getSectionDataByName $section]
-    set here 0
-
-    print [join [disa_block $here $addr [string length $data] $syms $data] \n]
-}
-
 proc disa_block { here addr leng syms data } {
     set lines {}
 
     while { $here < $leng } {
-        binary scan $data @${here}i word
+        if { $here + 2 >= $leng } {
+            binary scan $data @${here}s word
+        } else {
+            binary scan $data @${here}i word
+        }
 
         set symbol ""
         if { [dict exists $syms $addr] } {
             lappend lines {}
             lappend lines "        [dict get $syms $addr] :"
         }
-        if { ($word & 0x03) == 0x03 || ![iset c] } {
-            set word [expr { $word & 0xFFFFFFFF }]
+        try {
+            if { ($word & 0x03) == 0x03 || ![iset c] } {
+                set word [expr { $word & 0xFFFFFFFF }]
+                set wide 8
+                set skip 4
+                set size 4
 
-            if { $::unalias } {
-                set disa [unalias {*}[decode_op4 disa [0x $word]]]
+                if { $::unalias } {
+                    set disa [unalias {*}[decode_op4 disa [0x $word]]]
+                } else {
+                    set disa [decode_op4 disa [0x $word]]
+                }
+                set dargs [lassign $disa dop]
             } else {
-                set disa [decode_op4 disa [0x $word]]
+                set word [expr { $word & 0x0000FFFF }]
+                set wide 4
+                set skip 8
+                set size 2
+
+                if { $::unalias } {
+                    set disa [unalias {*}[decode_op2 disa [0x $word]]]
+                } else {
+                    set disa [decode_op2 disa [0x $word]]
+                }
+                set dargs [lassign $disa dop]
             }
-            set dargs [lassign $disa dop]
-            set wide 8
-            set skip 4
-            set size 4
-        } else {
-            set word [expr { $word & 0x0000FFFF }]
-            if { $::unalias } {
-                set disa [unalias {*}[decode_op2 disa [0x $word]]]
-            } else {
-                set disa [decode_op2 disa [0x $word]]
-            }
-            set dargs [lassign $disa dop]
-            set wide 4
-            set skip 8
-            set size 2
+        } on error e {
+            #print "$e"
+            set dop unknown
+            set dargs {}
         }
 
-        lappend lines "[format "%04x %0-*X %*s     %-8s" $addr $wide $word $skip "" $dop] $dargs"
-
+        if { [dict exists $::LINES $addr] } {
+            lassign [dict get $::LINES $addr] line instr
+            set line [format %05d $line]
+            set instr $instr
+        } else {
+            set line "    "
+            set instr ""
+        }
+        lappend lines "[format "%s %04X %0-*X %*s     %-8s %-20s" $line $addr $wide $word $skip "" $dop $dargs] : $instr"
         incr addr $size
         incr here $size
     }
@@ -137,14 +143,13 @@ proc disa_block { here addr leng syms data } {
 proc disassemble { args } {
 
     set file [lindex $args 0]
+    set segments [lassign [load $file] syms]
 
-    set e [elf::elf create e $file]
-
-    table foreachrow [$e get sections] {
-        if { $sh_type eq "SHT_PROGBITS" && ($sh_flags & 4)} {
-            print $sh_name $sh_type
-            disa_section $e $sh_name 
-            print
+    # TODO: Only load and disassebmle the segments that are executable.
+    foreach { mode addr segment } $segments {
+        if { $mode & 0x01 } {
+            print [join [disa_block 0 $addr [string length $segment] $syms $segment] \n]
         }
+        print
     }
 }

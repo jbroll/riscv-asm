@@ -4,7 +4,7 @@ set ::LABEL { . 0 }
 set ::labels {}               ; # Holds a dict of lists of resolve forward refs
 
 proc setlabel { name value } {
-    dict set ::LABEL $name $value
+    dict set ::LABEL $name [expr { $value }]
 }
 proc getlabel { name } {
     dict get $::LABEL $name
@@ -48,7 +48,8 @@ proc : { name args } {
     foreach label [dict get? $::labels $name] {
         dict with label {
             set word [ld_uword $addr]
-            set word [expr { $word | [::tcl::mathfunc::$type $dot] }]
+            set before $word
+            set word [expr { $word | [::tcl::mathfunc::$type [expr { $dot - $addr }]] }]
             if { $word & 0x03 } {
                 st_word $addr $word
             } else {
