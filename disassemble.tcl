@@ -129,7 +129,7 @@ proc disa_block { here addr leng syms data } {
             set line [format %05d $line]
             set instr $instr
         } else {
-            set line "    "
+            set line "     "
             set instr ""
         }
         lappend lines "[format "%s %04X %0-*X %*s     %-8s %-20s" $line $addr $wide $word $skip "" $dop $dargs] : $instr"
