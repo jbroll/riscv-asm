@@ -1,5 +1,6 @@
 package require jbr::dict
 
+set ::LINES {}
 set ::LABEL { . 0 }
 set ::labels {}               ; # Holds a dict of lists of resolve forward refs
 

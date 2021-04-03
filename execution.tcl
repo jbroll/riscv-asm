@@ -116,6 +116,7 @@ proc execute { verbose args } {
 
     upvar ::R R
     upvar ::C C
+    set block_size [expr { 16*3 }]
 
     while { $R(pc) <= $memmax && $R(pc) >= 0 } {
         set word [ld_uword $R(pc)]
@@ -126,7 +127,7 @@ proc execute { verbose args } {
             term clear
 
             set pc $R(pc)
-            set disa [disa_block $pc $pc [expr $pc + 16*3] $syms [memory $pc [expr $pc + 16*3]]]
+            set disa [disa_block 0 $pc $block_size $syms [memory $pc [expr $pc + $block_size]]]
             lappend disa {} {} {} {} {} 
 
             set dargs [lassign [decode_op disa [0x $word]] dop]
