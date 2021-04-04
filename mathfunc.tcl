@@ -36,18 +36,8 @@ namespace eval ::tcl::mathfunc {
         expr { msk2($n1 eq "" ? $n2 : $n1, $n2) }
     }
 
-    # Match functions for well known default values in alias and compact
-    # definitions.
-    #  
-    proc match_x0   rd { expr { $rd eq "x0" || $rd eq "zero" } }
-    proc match_zero rd { expr { $rd eq "x0" || $rd eq "zero" } }
-    proc match_x1   rd { expr { $rd eq "x1" || $rd eq "ra"   } }
-    proc match_ra   rd { expr { $rd eq "x1" || $rd eq "ra"   } }
-    proc match_x2   rd { expr { $rd eq "x2" || $rd eq "sp"   } }
-    proc match_sp   rd { expr { $rd eq "x2" || $rd eq "sp"   } }
     proc match_0    vx { expr { $vx ==   0 } }
     proc match_iorw vx { expr { $vx eq "iorw" } }
-    proc match_dyn  vx { expr { $vx eq "dyn" } }
 
     proc signed { value bits } {
         expr { ($value & msk2($bits-1, 0)) - (($value & exp2($bits-1)) == 0 ? 0 : exp2($bits)) }

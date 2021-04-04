@@ -9,6 +9,10 @@ proc _enum { func name bits message args } {
     lassign [regsub -all {[=._]} $bits " "] fr to
 
     proc ::tcl::mathfunc::$name { value } [% { return [expr { ${func}(%value, %::rva::registers::$name, "$message") * exp2($to) }] }]
+    proc ::tcl::mathfunc::match_${name} { value } [% { expr { %value in [dict keys %::rva::registers::$name] } }]
+    foreach enum [dict keys $registers] {
+        proc ::tcl::mathfunc::match_$enum { value } [% { expr { %value == "$enum" } }]
+    }
 
     set mask [msk2 $fr $to]
     if { $func eq "enum" } {
@@ -59,12 +63,6 @@ proc register { name bits reg api } {
     } else {
         rva-enum $name $bits "expected register name found" $reg $api
     }
-
-    # Create a function to match this register place holder.  These are used in
-    # the assembler and disassembler to test the validity of a alias or
-    # compressed instruction replacement.
-    #
-    proc tcl::mathfunc::match_${name} { value } [% { expr { %value in [dict keys %::rva::registers::$name] } }]
 }
 
 # Parse an immediate value place holder and create assembler parts for it

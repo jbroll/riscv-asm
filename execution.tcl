@@ -129,7 +129,7 @@ proc execute { verbose args } {
             term clear
 
             set pc $R(pc)
-            set disa [disa_block 0 $pc $block_size $syms [memory $pc [expr $pc + $block_size]]]
+            set disa [disa_block no 0 $pc $block_size $syms [memory $pc [expr $pc + $block_size]]]
             lappend disa {} {} {} {} {} 
 
             set dargs [lassign [decode_op disa [0x $word]] dop]

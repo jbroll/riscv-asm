@@ -161,7 +161,7 @@ proc main { args } {
         exit
     }
     if { $::disassemble ne no } {
-        disassemble {*}$files
+        disassemble $verbose {*}$files
         exit
     }
 
@@ -178,7 +178,7 @@ proc main { args } {
         }
         exit 1
     }
-    print [join [disa_block 0 0 [dot] $::LABEL [binary format c* $::mem]] \n]
+    print [join [disa_block $verbose 0 0 [dot] $::LABEL [binary format c* $::mem]] \n]
 }
 
 main {*}$argv

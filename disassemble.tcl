@@ -77,7 +77,7 @@ proc load_syms { elf } {
     return $syms
 }
 
-proc disa_block { here addr leng syms data } {
+proc disa_block { verbose here addr leng syms data } {
     set lines {}
 
     while { $here < $leng } {
@@ -119,7 +119,9 @@ proc disa_block { here addr leng syms data } {
                 set dargs [lassign $disa dop]
             }
         } on error {e info} {
-            eprint "$e : [dict get $info -errorinfo]"
+            if { $verbose } {
+                eprint "$e : [dict get $info -errorinfo]"
+            }
             set dop unknown
             set dargs {}
         }
@@ -140,7 +142,7 @@ proc disa_block { here addr leng syms data } {
     return $lines
 }
 
-proc disassemble { args } {
+proc disassemble { verbose args } {
 
     set file [lindex $args 0]
     set segments [lassign [load $file] syms]
@@ -148,7 +150,7 @@ proc disassemble { args } {
     # TODO: Only load and disassebmle the segments that are executable.
     foreach { mode addr segment } $segments {
         if { $mode & 0x01 } {
-            print [join [disa_block 0 $addr [string length $segment] $syms $segment] \n]
+            print [join [disa_block $verbose 0 $addr [string length $segment] $syms $segment] \n]
         }
         print
     }
