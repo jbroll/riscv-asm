@@ -118,8 +118,8 @@ proc disa_block { here addr leng syms data } {
                 }
                 set dargs [lassign $disa dop]
             }
-        } on error e {
-            #print "$e"
+        } on error {e info} {
+            eprint "$e : [dict get $info -errorinfo]"
             set dop unknown
             set dargs {}
         }

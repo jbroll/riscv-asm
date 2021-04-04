@@ -47,6 +47,7 @@ namespace eval ::tcl::mathfunc {
     proc match_sp   rd { expr { $rd eq "x2" || $rd eq "sp"   } }
     proc match_0    vx { expr { $vx ==   0 } }
     proc match_iorw vx { expr { $vx eq "iorw" } }
+    proc match_dyn  vx { expr { $vx eq "dyn" } }
 
     proc signed { value bits } {
         expr { ($value & msk2($bits-1, 0)) - (($value & exp2($bits-1)) == 0 ? 0 : exp2($bits)) }
