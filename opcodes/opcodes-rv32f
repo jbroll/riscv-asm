@@ -27,22 +27,22 @@ opcode fclass.s  rd fs1     : 24..20=0 31..27=0x1C 14..12=1 26..25=0 6..2=0x14 1
 
 opcode fcvt.s.w  fd rs1 rm : 24..20=0 31..27=0x1A 26..25=0 6..2=0x14 1..0=3             | { fd = rs1 }
 alias  fcvt.s.w  fd rs1 -> fcvt.s.w fd rs1 dyn
-opcode fcvt.s.wu fd rs1 rm : 24..20=1 31..27=0x1A 26..25=0 6..2=0x14 1..0=3             | { fd = rs1 & 0xFFFFFFFF }
+opcode fcvt.s.wu fd rs1 rm : 24..20=1 31..27=0x1A 26..25=0 6..2=0x14 1..0=3             | { fd = unsigned(rs1) }
 alias  fcvt.s.wu fd rs1 -> fcvt.s.wu fd rs1 dyn
 
 if { ![iset finx] } {
-    opcode fmv.x.w   rd fs1 : 24..20=0 31..27=0x1C 14..12=0 26..25=0 6..2=0x14 1..0=3
-    opcode fmv.w.x   fd rs1 : 24..20=0 31..27=0x1E 14..12=0 26..25=0 6..2=0x14 1..0=3
+    opcode fmv.x.w   rd fs1 : 24..20=0 31..27=0x1C 14..12=0 26..25=0 6..2=0x14 1..0=3   | { rd = fbits(fs1) }
+    opcode fmv.w.x   fd rs1 : 24..20=0 31..27=0x1E 14..12=0 26..25=0 6..2=0x14 1..0=3   | { fd = wbits(rs1) }
 }
 
-opcode flw       fd  rs1  limm12 : 14..12=2 6..2=0x01 1..0=3
-opcode fsw       fs2 rs1  simm12 : 14..12=2 6..2=0x09 1..0=3
+opcode flw       fd  rs1  limm12 : 14..12=2 6..2=0x01 1..0=3                            | { fd = ld_fword(rs1+limm12) }
+opcode fsw       fs2 rs1  simm12 : 14..12=2 6..2=0x09 1..0=3                            | { st_fword(rs1+simm12, fsw) }
 
-opcode fmadd.s   fd fs1 fs2 fs3 rm : 26..25=0 6..2=0x10 1..0=3                          | { fd += fs1 }
-alias  fmadd.s   fd fs1 fs2 fs3 -> fmadd.s fd fs1 fs2 fs3 dyn                           | { fd += fs1 }
-opcode fmsub.s   fd fs1 fs2 fs3 rm : 26..25=0 6..2=0x11 1..0=3                          | { fd += fs1 }
-alias  fmsub.s   fd fs1 fs2 fs3 -> fmsub.s fd fs1 fs2 fs3 dyn                           | { fd += fs1 }
-opcode fnmsub.s  fd fs1 fs2 fs3 rm : 26..25=0 6..2=0x12 1..0=3                          | { fd += fs1 }
-alias  fnmsub.s   fd fs1 fs2 fs3 -> fnmsub.s fd fs1 fs2 fs3 dyn                         | { fd += fs1 }
-opcode fnmadd.s  fd fs1 fs2 fs3 rm : 26..25=0 6..2=0x13 1..0=3                          | { fd += fs1 }
-alias  fnmadd.s   fd fs1 fs2 fs3 -> fnmadd.s fd fs1 fs2 fs3 dyn                         | { fd += fs1 }
+opcode fmadd.s   fd fs1 fs2 fs3 rm : 26..25=0 6..2=0x10 1..0=3                          | { fd = fs1 + fs2*fs3 }
+alias  fmadd.s   fd fs1 fs2 fs3 -> fmadd.s fd fs1 fs2 fs3 dyn 
+opcode fmsub.s   fd fs1 fs2 fs3 rm : 26..25=0 6..2=0x11 1..0=3                          | { fd = fs1 - fs2*fs3 }
+alias  fmsub.s   fd fs1 fs2 fs3 -> fmsub.s fd fs1 fs2 fs3 dyn
+opcode fnmsub.s  fd fs1 fs2 fs3 rm : 26..25=0 6..2=0x12 1..0=3                          | { fd = fs1 + fs2*fs3 }
+alias  fnmsub.s  fd fs1 fs2 fs3 -> fnmsub.s fd fs1 fs2 fs3 dyn
+opcode fnmadd.s  fd fs1 fs2 fs3 rm : 26..25=0 6..2=0x13 1..0=3                          | { fd = fs1 - fs2*fs3 }
+alias  fnmadd.s  fd fs1 fs2 fs3 -> fnmadd.s fd fs1 fs2 fs3 dyn

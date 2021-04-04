@@ -122,11 +122,11 @@ opcode csrrsi      rd  uimm5  csr                   : 14..12=6 6..2=0x1C 1..0=3 
 opcode csrrci      rd  uimm5  csr                   : 14..12=7 6..2=0x1C 1..0=3     | { rd = csr ; csr = csr & ~uimm5 }
 
 # pseudo-instructions that map to csr*
-opcode frflags    rd          : 31..20=0x001 19..15=0 14..12=2 6..2=0x1C 1..0=3
+alias  frflags    rd        -> csrrs rd  x0 fflags
 opcode frrm       rd          : 31..20=0x002 19..15=0 14..12=2 6..2=0x1C 1..0=3
 opcode frcsr      rd          : 31..20=0x003 19..15=0 14..12=2 6..2=0x1C 1..0=3
 
-opcode fsflags    rd rs1      : 31..20=0x001          14..12=1 6..2=0x1C 1..0=3
+alias  fsflags    rd rs1    -> csrrs rd rs1 fflags
 opcode fsflagsi   rd uimm5    : 31..20=0x001          14..12=5 6..2=0x1C 1..0=3
 opcode fsrm       rd rs1      : 31..20=0x002          14..12=1 6..2=0x1C 1..0=3
 opcode fsrmi      rd uimm5    : 31..20=0x002          14..12=5 6..2=0x1C 1..0=3
