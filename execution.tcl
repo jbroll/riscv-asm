@@ -14,6 +14,7 @@ proc execut_init {} {
     set ::enu-regexp \\m([join $::eclasses |])\\M                           ; # Enumerated place holders
     set ::csr-regexp \\m([join [dict keys $::rva::registers::csr] |])\\M    ; # CSRs
     set ::pcx-regexp \\m([join [list pc {*}$::regNames] |])\\M              ; # Registers + pc
+    set ::fpx-regexp \\m([join [list {*}$::regfpNames] |])\\M               ; # fp Registers
     set ::var-regexp \\m(tmp)\\M                                            ; # The tmp variable!
 
     # Iitialize the registers and control/status to Zero
@@ -21,6 +22,7 @@ proc execut_init {} {
     upvar ::C C
     set R(pc) 0
     foreach reg $::regNames                        { set R($reg) 0 }
+    foreach reg $::regfpNames                      { set R($reg) 0 }
     foreach reg [dict keys $::rva::registers::csr] { set C($reg) 0 }
 
     dict for {op opcode} $::opcode {
@@ -51,12 +53,12 @@ proc execut_init {} {
 
             set disa [dict get $::opcode $op disa]
 
-            proc exec_${mask}_${bits} { word } [% {         ; # executon proc created with template substitution.
+            proc exec_${mask}_${bits} { word } [uncomment [% {         ; # executon proc created with template substitution.
                 upvar ::R R ; upvar ::C C
                 set disa [$disa %word]                      ; # disasemle the instruction to get the register and offset values
                 lassign %disa op $Pars                      ; # bind the local parameters names to the disassembled values
                 [!string map { % %% } $Code]                ; # map % to %% to escape mod operator from template substitution
-            }]
+            }]]
 
             # Register this opcodes execution so that the decoder can find it.
             #
@@ -135,11 +137,11 @@ proc execute { verbose args } {
             set code [dict get $::opcode $dop exec]
             lappend disa {*}[split  "$code {} [info body $code]" \n] 
 
-            foreach b [format-regs [array get R *] $format] c $disa {
+            foreach a [format-regs [array get R x*] $format] b [format-regs [array get R f*] "% 12.5f"] c $disa {
                 if { [string index $c 0] == "0" && "0x0[lindex $c 0]" == $pc } {
-                    print $b "     --> " $c
+                    print $a $b  "     --> " $c
                 } else {
-                    print $b "         " $c
+                    print $a $b "         " $c
                 }
             }
 

@@ -53,5 +53,14 @@ namespace eval ::tcl::mathfunc {
         expr { ($value & msk2($bits-1, 0)) - (($value & exp2($bits-1)) == 0 ? 0 : exp2($bits)) }
     }
 
+    proc fbits { v } {
+        binary scan [binary format r $v] i result
+        return $result
+    }
+    proc ibits { v } {
+        binary scan [binary format i $v] r result
+        return $result
+    }
+
     namespace export msk2 exp2
 }

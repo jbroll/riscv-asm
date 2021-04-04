@@ -7,6 +7,7 @@ proc expr-regsub { expr { dollar \$ } } {
     set expr [regsub -all -- {\Mra\m} $expr x1]
     set expr [regsub -all -- ${::reg-regexp} "$expr" "${dollar}R(\$&)"]
     set expr [regsub -all -- ${::pcx-regexp} "$expr" "${dollar}R(&)"]
+    set expr [regsub -all -- ${::fpx-regexp} "$expr" "${dollar}R(&)"]
     set expr [regsub -all -- ${::enu-regexp} "$expr" "${dollar}C(\$&)"]
     set expr [regsub -all -- ${::csr-regexp} "$expr" "${dollar}C(&)"]
     set expr [regsub -all -- ${::imm-regexp} "$expr" "${dollar}&"]
@@ -15,20 +16,18 @@ proc expr-regsub { expr { dollar \$ } } {
 
 sugar::syntaxmacro sugarmath { args } {
 
-    if { [xlen] == 32 } {
-        set mask 0xFFFFFFFF
-    } else {
-        set mask 0xFFFFFFFFFFFFFFFF
-    }
-
     # rx = some math expr
     #
     if { [lindex $args 1] eq "=" } {
-        set xx [lindex $args 0]
-        set xx [expr-regsub $xx ""]
+        set yy [lindex $args 0]
+        set xx [expr-regsub $yy ""]
         set expr [lrange $args 2 end]
         set expr [expr-regsub $expr]
-        return [list set $xx "\[expr { signed(($expr) & $mask, [xlen]) }]"]
+        if { [string index $yy 0] eq f } {
+            return [list set $xx "\[expr { $expr }]"]
+        } else {
+            return [list set $xx "\[expr { signed(($expr), [xlen]) }]"]
+        }
     }
 
     # rx += some math expr
@@ -39,7 +38,7 @@ sugar::syntaxmacro sugarmath { args } {
         set expr "$xx $op [join [lrange $args 2 end]]"
         set expr [expr-regsub $expr]
         set xx [expr-regsub $xx ""]
-        return [list set $xx "\[expr { $expr }]"]       ; # Should this look like expr above? (mask and resigned?)
+        return [list set $xx "\[expr { signed(($expr), [xlen]) }]"]
     }
 
     # some math function call (with side effects) on a line by itself.

@@ -50,6 +50,11 @@ namespace eval ::tcl::mathfunc {
         expr { $value & msk2($from, 0) }
     }
 
+    proc ld_fword { addr } {
+        binary scan [binary format c* [lrange $::mem $addr $addr+3]] r word
+        return $word
+    }
+
     namespace export ld_uword ld_uhalf st_byte st_half st_word st_dble
 }
 namespace import ::tcl::mathfunc::ld_uword

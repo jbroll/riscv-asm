@@ -53,11 +53,12 @@ if { [iset zfinx] } {
     }]
     if { [iset e] } { set apifp [lrange $apifp 0 15] }
 
-    set regfp [reg-names {  f0   f1   f2   f3   f4   f5   f6   f7   
+    set ::regfpNames {  f0   f1   f2   f3   f4   f5   f6   f7   
                             f8   f9  f10  f11  f12  f13  f14  f15  
                            f16  f17  f18  f19  f20  f21  f22  f23  
                            f24  f25  f26  f27  f28  f29  f30  f31 
-    }]
+    }
+    set regfp [reg-names $::regfpNames]
     if { [iset e] } { set regfp [lrange $regfp 0 15] }
 }
 set apifpnz [dict remove $apifp zero]
