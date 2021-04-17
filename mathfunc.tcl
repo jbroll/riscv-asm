@@ -52,5 +52,44 @@ namespace eval ::tcl::mathfunc {
         return $result
     }
 
+    proc fpnorm32 { value } {
+        binary scan [binary format r $value] r value
+        return $value
+    }
+
+    proc fpnorm64 { value } {
+        binary scan [binary format q $value] q value
+        return $value
+    }
+
+    proc fpcsr { value } {
+        if { $value ==  inf } { return $value }
+        if { $value == -inf } { return $value }
+
+        set norm [fpnorm32 $value]
+        if { $norm != $value } {
+            set ::C(fflags) [expr { $::C(fflags) | 1 }]
+        }
+        return $value
+    }
+
+    proc fpclass { value } {
+        set bits [unsigned [fbits $value]]
+        print $value [format 0x%x $bits]
+        set value 0
+        if { $bits == 0xff800000 } { set value [expr { $value | (1 << 0) }] }
+        if { $bits == 0xbf800000 } { set value [expr { $value | (1 << 1) }] }
+        if { $bits == 0x807fffff } { set value [expr { $value | (1 << 2) }] }
+        if { $bits == 0x80000000 } { set value [expr { $value | (1 << 3) }] }
+        if { $bits == 0x00000000 } { set value [expr { $value | (1 << 4) }] }
+        if { $bits == 0x007fffff } { set value [expr { $value | (1 << 5) }] }
+        if { $bits == 0x3f800000 } { set value [expr { $value | (1 << 6) }] }
+        if { $bits == 0x7f800000 } { set value [expr { $value | (1 << 7) }] }
+        if { $bits == 0x7f800001 } { set value [expr { $value | (1 << 8) }] }
+        if { $bits == 0x7fc00000 } { set value [expr { $value | (1 << 9) }] }
+
+        return $value
+    }
+
     namespace export msk2 exp2
 }

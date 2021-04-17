@@ -23,7 +23,7 @@ opcode fcvt.w.s  rd fs1 rm  : 24..20=0 31..27=0x18 26..25=0 6..2=0x14 1..0=3    
 alias  fcvt.w.s  rd fs1 -> fcvt.w.s rd fs1 dyn
 opcode fcvt.wu.s rd fs1 rm  : 24..20=1 31..27=0x18 26..25=0 6..2=0x14 1..0=3            | { rd = abs(fs1) }
 alias  fcvt.wu.s rd fs1 -> fcvt.wu.s rd fs1 dyn
-opcode fclass.s  rd fs1     : 24..20=0 31..27=0x1C 14..12=1 26..25=0 6..2=0x14 1..0=3   | { rd = 1 }
+opcode fclass.s  rd fs1     : 24..20=0 31..27=0x1C 14..12=1 26..25=0 6..2=0x14 1..0=3   | { rd = fpclass(fs1) }
 
 opcode fcvt.s.w  fd rs1 rm : 24..20=0 31..27=0x1A 26..25=0 6..2=0x14 1..0=3             | { fd = rs1 }
 alias  fcvt.s.w  fd rs1 -> fcvt.s.w fd rs1 dyn
@@ -32,7 +32,7 @@ alias  fcvt.s.wu fd rs1 -> fcvt.s.wu fd rs1 dyn
 
 if { ![iset finx] } {
     opcode fmv.x.w   rd fs1 : 24..20=0 31..27=0x1C 14..12=0 26..25=0 6..2=0x14 1..0=3   | { rd = fbits(fs1) }
-    opcode fmv.w.x   fd rs1 : 24..20=0 31..27=0x1E 14..12=0 26..25=0 6..2=0x14 1..0=3   | { fd = wbits(rs1) }
+    opcode fmv.w.x   fd rs1 : 24..20=0 31..27=0x1E 14..12=0 26..25=0 6..2=0x14 1..0=3   | { fd = ibits(rs1) }
 }
 
 opcode flw       fd  rs1  limm12 : 14..12=2 6..2=0x01 1..0=3                            | { fd = ld_fword(rs1+limm12) }

@@ -68,7 +68,12 @@ proc execut_init {} {
 }
 
 proc format-regs { regs format } {
-    lsort [lmap { name value } $regs { format "% 4s: $format" $name $value }]
+    lsort [lmap { name value } $regs { 
+        if { $value != $value } {
+            format "% 4s: %12s" $name nan
+        } else {
+            format "% 4s: $format" $name $value }
+    }]
 }
 
 proc write_state { file state } {

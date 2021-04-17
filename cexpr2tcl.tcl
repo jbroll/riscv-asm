@@ -14,6 +14,14 @@ proc expr-regsub { expr { dollar \$ } } {
     set expr [regsub -all -- ${::var-regexp} "$expr" "${dollar}&"]
 }
 
+proc fptrap { var script } {
+    try {
+        uplevel "set $var \[$script]"
+    } on error {e info} {
+        set ::C(fflags) [expr { $::C(fflags) | 0x10 }]
+        uplevel "set $var nan"
+    }
+}
 sugar::syntaxmacro sugarmath { args } {
 
     # rx = some math expr
@@ -24,7 +32,7 @@ sugar::syntaxmacro sugarmath { args } {
         set expr [lrange $args 2 end]
         set expr [expr-regsub $expr]
         if { [string index $yy 0] eq f } {
-            return [list set $xx "\[expr { $expr }]"]
+            return [list fptrap $xx [% { { expr { fpcsr($expr) } } }]]
         } else {
             return [list set $xx "\[expr { signed(($expr), [xlen]) }]"]
         }
