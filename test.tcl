@@ -25,7 +25,7 @@ test::suite riscv-asm {
             : here
             eq [getlabel here] 14           "check that the label 'here' is defined"
         }
-        case-unknown: {
+        case-unknown {
             dot 14
             here:
             eq [getlabel here] 14           "check that the label 'here' is defined"

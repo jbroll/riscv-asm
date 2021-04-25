@@ -1,0 +1,98 @@
+#!/usr/bin/env tclkit8.6
+#
+package require jbr::assert
+package require jbr::print
+package require jbr::test
+
+test::suite ieee754-binary32 {
+    test ieee754 {
+        setup {
+            source ./ieee754.tcl
+            ieee754 create flt 8 23
+        }
+
+        case-nan {
+            true [flt isnan [flt nan]]
+        }
+        case-inf {
+            true [flt isinf [flt inf]]
+        }
+
+        case-isnan {
+            true  [flt isnan 0x7FFFFFFF]
+            true  [flt isnan 0xFFFFFFFF]
+            true  [flt isnan 0x7FF80001]
+
+            false [flt isnan 0x7F000001]   "0x7F000001"
+            false [flt isnan 0x7F800000]   "0x7F800000"
+        }
+        case-isinf {
+            true  [flt isinf 0x7F800000]
+            true  [flt isinf 0xFF800000]
+
+            false [flt isnan 0x7F000001]   "0x7F000001"
+            false [flt isnan 0x7F800000]   "0x7F800000"
+        }
+
+        case-to-float {
+            eq [flt to-float 0x3f800000]  1
+            eq [flt to-float 0x3f800001]  1.00000011920928955078125
+            eq [flt to-float 0x3f800002]  1.00000023841857910156255
+            eq [flt to-float 0x3f8e353f]  1.11099994182586669921875
+            eq [flt to-float 0x00800000]  1.17549435082228750797e-38
+            eq [flt to-float 0x7f000000]  1.70141183460469231732e+38
+            eq [flt to-float 0x00ffffff]  2.35098856151472858346e-38
+            eq [flt to-float 0x7f7fffff]  3.40282346638528859812e+38
+        }
+
+        case-to-ieee754 {
+            eq [flt to-ieee754 1]                           0x3f800000
+            eq [flt to-ieee754 1.00000011920928955078125]   0x3f800001
+            eq [flt to-ieee754 1.00000023841857910156255]   0x3f800002
+            eq [flt to-ieee754 1.111]                       0x3f8e353f
+            eq [flt to-ieee754 1.17549435082228750797e-38]  0x00800000
+            eq [flt to-ieee754 1.70141183460469231732e+38]  0x7f000000
+            eq [flt to-ieee754 3.40282346638528859812e+38]  0x7f7fffff
+        }
+        case-to-ieee754 {
+            skip "incorrect bias for 2.35098856151472858346e-38"
+            eq [flt to-ieee754 2.35098856151472858346e-38]  0x00ffffff
+        }
+
+        case-add {
+            eq  [flt to-float [flt add [flt to-ieee754 1.1] [flt to-ieee754 2.2]]] 3.29999971389770507813
+        }
+    }
+}
+
+test::suite ieee754-binary64 {
+    test ieee754 {
+        setup {
+            source ./ieee754.tcl
+            ieee754 create flt 11 52
+        }
+
+        case-nan {
+            true [flt isnan [flt nan]]
+        }
+        case-inf {
+            true [flt isinf [flt inf]]
+        }
+
+        case-isnan {
+            true  [flt isnan 0x7FFFFFFFFFFFFFFF]
+            true  [flt isnan 0xFFFFFFFFFFFFFFFF]
+            true  [flt isnan 0x7FF0000000000001]
+
+            false [flt isnan 0x7FE0000000000001]   "0x7F000001"
+            false [flt isnan 0x7FE0000000000000]   "0x7F800000"
+        }
+        case-isinf {
+            true  [flt isinf 0x7FF0000000000000]
+            true  [flt isinf 0xFFF0000000000000]
+
+            false [flt isnan 0x7FE0000000000001]   "0x7F000001"
+            false [flt isnan 0x7FF0000000000000]   "0x7F800000"
+        }
+    }
+}
