@@ -65,6 +65,16 @@ oo::class create ieee754 {
         return false
     }
 
+    method sign { value } {
+        my variable BITS
+
+        if { $value & (1 << ($BITS-1)) } {
+            return -1
+        } else {
+            return  1
+        }
+    }
+
     method shift { v shift } {
         if { $shift < 0 } {
             return [expr { $v / (1 << -$shift) }]
@@ -114,10 +124,7 @@ oo::class create ieee754 {
         set m [expr { $e != 0 ? double($m | (1 << $M)) : 0 }]
         expr { ($s ? -1 : 1) * [my shift [expr { $m/(1 << $M) }] [expr { ($e - $BIAS) }]] }
     }
-    method to-unsigned { v } {
-        expr { int([my to-float($v)]) }
-    }
-    method to-signed { v } {
+    method to-entier { v } {
         expr { int([my to-float($v)]) }
     }
 

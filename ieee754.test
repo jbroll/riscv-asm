@@ -33,6 +33,11 @@ test::suite ieee754-binary32 {
             false {flt isnan 0x7F000001}   "0x7F000001"
             false {flt isnan 0x7F800000}   "0x7F800000"
         }
+        
+        case-sign {
+            eq { flt sign 0x7FFFFFFF }  1
+            eq { flt sign 0x80000000 } -1
+        }
 
         case-to-float {
             eq {flt to-float 0x3f800000}  1
