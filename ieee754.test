@@ -65,9 +65,9 @@ test::suite ieee754-binary32 {
     }
 }
 
-exit
 test::suite ieee754-binary64 {
     test ieee754 {
+        skip "not ready for this quite yet"
         setup {
             source ./ieee754.tcl
             ieee754 create flt 11 52
