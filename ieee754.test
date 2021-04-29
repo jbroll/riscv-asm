@@ -1,13 +1,21 @@
 #!/usr/bin/env tclkit8.6
 #
-package require jbr::assert
-package require jbr::print
 package require jbr::test
 
-test::suite ieee754-binary32 {
-    test ieee754 {
+test::suite ieee754 {
+    setup {
+        source ./ieee754.tcl
+
+        proc flt-op { op a b = expect } {
+            eq {flt to-float [flt $op [flt to-ieee754 $a] [flt to-ieee754 $b]]} $expect "$a $op $b = $expect"
+        }
+        proc flt-round-trip { v } {
+            eq {flt to-float [flt to-ieee754 $v]} $v
+        }
+    }
+
+    test binary32 {
         setup {
-            source ./ieee754.tcl
             ieee754 create flt 8 23
         }
 
@@ -58,23 +66,36 @@ test::suite ieee754-binary32 {
             eq {flt to-ieee754 1.17549435082228750797e-38}  0x00800000
             eq {flt to-ieee754 1.70141183460469231732e+38}  0x7f000000
             eq {flt to-ieee754 3.40282346638528859812e+38}  0x7f7fffff
+            warn eq {flt to-ieee754 2.35098856151472858346e-38}  0x00ffffff
         }
-        case-to-ieee754 {
-            skip "incorrect bias for 2.35098856151472858346e-38"
-            eq {flt to-ieee754 2.35098856151472858346e-38}  0x00ffffff
+        case-round-trip {
+            flt-round-trip 1.00
+            flt-round-trip 1.5
+            flt-round-trip 0.50
+            flt-round-trip 1.05
+            flt-round-trip 3.40282346638528859812e+38
+
+            warn flt-round-trip 0.05
+        }
+
+        case-mul {
+            flt-op mul   0.1    0.5  = 0.05
+            #flt-op mul   1.0    0.5  = 0.5
+            #flt-op mul 200.5555 0.5  = 0.11249999701976776
+            #flt-op mul 200.111  0.25 = 50.027748107910156
+            #print [flt to-float [flt mul [flt to-ieee754 1.0] [flt to-ieee754 0.5]]]
+            #print [flt to-float [flt mul [flt to-ieee754 1.5555] [flt to-ieee754 0.5]]]
+            #print [flt to-float [flt mul [flt to-ieee754 0.5555] [flt to-ieee754 0.5]]]
         }
 
         case-add {
             eq  {flt to-float [flt add [flt to-ieee754 1.1] [flt to-ieee754 2.2]]} 3.29999971389770507813
         }
     }
-}
 
-test::suite ieee754-binary64 {
-    test ieee754 {
+    test binary64 {
         skip "not ready for this quite yet"
         setup {
-            source ./ieee754.tcl
             ieee754 create flt 11 52
         }
 
@@ -102,3 +123,4 @@ test::suite ieee754-binary64 {
         }
     }
 }
+

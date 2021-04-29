@@ -86,7 +86,12 @@ oo::class create ieee754 {
     method to-ieee754 { v { point 0 } } {
         my variable MAX EXPONENT_BITS MIN_EXPONENT BIAS M E
 
+        if { $v == 0 } {
+            return [my pack 0 $point $v]
+        }
+
         set sign [expr $v < 0 ? 1 : 0]
+        set v [expr { abs($v) }]
 
         if { $v > $MAX } {
             #print Over $v $MAX
@@ -95,7 +100,7 @@ oo::class create ieee754 {
             #
             return [my pack $sign $EXPONENT_BITS 0]
         } else {
-            set log2 [expr { int(log($v)/log(2)) }]
+            set log2 [expr { entier(log($v)/log(2)) }]
 
             #print $v $log2 [expr { log($v)/log(2) }]
 
@@ -125,17 +130,30 @@ oo::class create ieee754 {
         expr { ($s ? -1 : 1) * [my shift [expr { $m/(1 << $M) }] [expr { ($e - $BIAS) }]] }
     }
     method to-entier { v } {
-        expr { int([my to-float($v)]) }
+        expr { entier([my to-float($v)]) }
     }
 
     method add { a b } {
+
         my to-ieee754 [expr { [my to-float $a] + [my to-float $b] }]
     }
     method sub { a b } {
         my to-ieee754 [expr { [my to-float $a] - [my to-float $b] }]
     }
     method mul { a b } {
-        my to-ieee754 [expr { [my to-float $a] * [my to-float $b] }]
+        my variable M BIAS BITS
+
+        lassign [my unpack $a] as ae am
+        lassign [my unpack $b] bs be bm
+
+        set am [expr { $ae != 0 ? ($am | (1 << $M)) : 0 }]
+        set bm [expr { $be != 0 ? ($bm | (1 << $M)) : 0 }]
+
+        set as [expr { $as ^ $bs }]
+        set ae [expr { $ae + $be - $BIAS*2 }]
+        set am [expr { $am * $bm }]
+
+        expr { [my to-ieee754 $am [expr { -2*$M+$ae }]] | ($as ? (1 << ($BITS-1)) : 0) }
     }
     method div { a b } {
         my to-ieee754 [expr { [my to-float $a] / [my to-float $b] }]
