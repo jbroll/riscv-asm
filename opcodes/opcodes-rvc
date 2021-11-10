@@ -1,19 +1,19 @@
 # compressed instructions
 
-immediate  nzimm6     12|6..2                        6
-immediate  nzimm6up   12|6..2|xxxxxxxxxxxx          18
-immediate  nzimm6sp   12|4..3|5|2|6|xxxx            10
+immediate  nzimm6     12|6..2
+immediate  nzimm6up   12|6..2|xxxxxxxxxxxx
+immediate  nzimm6sp   12|4..3|5|2|6|xxxx
 immediate  nzimm8sp   10..7|12..11|5|6|xx           unsigned
-immediate  cbimm6     12|6..2                        6
-immediate  cbshamt6   12|6..2                        6
-immediate  cbshamt5      6..2                        5
-immediate  ciimm6     12|6..2                        6
-immediate  ciImm6     3..2|12|6..4|xx                8
-immediate  ciImm6w    8..7|12..9|xx                  8
-immediate  cbimm8     12|6..5|2|11..10|4..3|x        9
-immediate  clswimm6   5|12..10|6|xx                  8
-immediate  clsdimm6   6..5|12..10|xxx                9
-immediate  cjimm11    12|8|10..9|6|7|2|11|5..3|x    12
+immediate  cbimm6     12|6..2
+immediate  cbshamt6   12|6..2
+immediate  cbshamt5      6..2
+immediate  ciimm6     12|6..2
+immediate  ciImm6     3..2|12|6..4|xx
+immediate  ciImm6w    8..7|12..9|xx
+immediate  cbimm8     12|6..5|2|11..10|4..3|x
+immediate  clswimm6   5|12..10|6|xx
+immediate  clsdimm6   6..5|12..10|xxx
+immediate  cjimm11    12|8|10..9|6|7|2|11|5..3|x
 
 opcode c.unimp                     : 15..0=0                                 -> unimp
 opcode c.ebreak                    : 1..0=2 15..13=4 12=1 11..7=0 6..2=0     ->  ebreak

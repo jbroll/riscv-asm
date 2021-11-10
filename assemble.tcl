@@ -67,7 +67,7 @@ proc register { name bits reg api } {
 
 # Parse an immediate value place holder and create assembler parts for it
 #
-proc immediate { name Bits width } {
+proc immediate { name Bits { unsigned no } } {
     lappend ::iclasses $name
 
     set bits [lreverse [split $Bits |]]
@@ -113,13 +113,13 @@ proc immediate { name Bits width } {
     # instruction using the above expression.  Most immedaites are wrapped
     # in 'signed' to sign extend the value after extraction.
     # 
-    if { $width == "unsigned" } {
+    if { $unsigned == "unsigned" } {
         proc dis_$name { value } [% {
             expr { $disa }
         }]
     } else {
         proc dis_$name { value } [% {
-            expr { signed($disa, $width) }
+            expr { signed($disa, $hi) }
         }]
     }
 
@@ -264,4 +264,3 @@ proc macro { name args body } {
     }
     proc $name $args $body
 }
-

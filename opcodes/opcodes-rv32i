@@ -1,11 +1,11 @@
 
-immediate jimm20    31|19..12|20|30..21|x   21
-immediate bimm12    31|7|30..25|11..8|x     13
-immediate jimm12    31..20                  12
-immediate limm12    31..20                  12
-immediate simm12    31..25|11..7            12
-immediate aimm12    31..20                  12
-immediate  imm20    31..12|xxxxxxxxxxxx     32
+immediate jimm20    31|19..12|20|30..21|x
+immediate bimm12    31|7|30..25|11..8|x
+immediate jimm12    31..20
+immediate limm12    31..20
+immediate simm12    31..25|11..7
+immediate aimm12    31..20
+immediate  imm20    31..12|xxxxxxxxxxxx
 immediate shamt6    25..20                  unsigned
 immediate  uimm5    19..15                  unsigned
 

@@ -22,22 +22,22 @@
 00028 0046 0201              addi     x4 x4 0              : .db 1 2 3
       0048 68540003          lb       x0 x8 1669           : 
       004C 7369              lui      x6 -24576            : 
-      004E 6920              flw      f8 x10 80            : 
+      004E 6920              flw      f8 x10 -48           : 
       0050 20612073          unknown                       : 
       0054 69727473          unknown                       : 
       0058 676E              flw      f14 x2 -40           : 
 00031 005A 6854              flw      f13 x8 20            : .asciz This on is nul terminated
       005C 7369              lui      x6 -24576            : 
-      005E 6F20              flw      f8 x14 88            : 
+      005E 6F20              flw      f8 x14 -40           : 
       0060 206E              fld      f0 x2 -40            : 
       0062 7369              lui      x6 -24576            : 
-      0064 6E20              flw      f8 x12 88            : 
+      0064 6E20              flw      f8 x12 -40           : 
       0066 6C75              lui      x24 118784           : 
-      0068 7420              flw      f8 x8 104            : 
+      0068 7420              flw      f8 x8 -24            : 
       006A 7265              lui      x4 -28672            : 
       006C 696D              lui      x18 110592           : 
       006E 616E              flw      f2 x2 -40            : 
-      0070 6574              flw      f13 x10 76           : 
+      0070 6574              flw      f13 x10 -52          : 
       0072 0064              addi     x9 x2 12             : 
 00033 0074 0020              addi     x8 x2 8              : .dw 32 32
       0076 0000              unimp                         : 
